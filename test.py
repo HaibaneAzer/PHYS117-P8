@@ -1,4 +1,7 @@
+import sys
+directory_path = "/Users/marcu/anaconda3/envs/phys117_py2/Lib/site-packages"
+sys.path.append(directory_path)
+from LHCO_reader import LHCO_reader
 
-# print test
-print("This is a test")
-print(0.1+0.2 == 0.3)
+events = LHCO_reader.Events(f_name="example.lhco")
+print (events)
