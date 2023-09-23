@@ -50,11 +50,6 @@ def validate_events(events):
 
 
 def main(idx, jdx):
-    # define folder and file
-
-    # locate file with index (idx = folder, jdx = file)
-    idx = 0
-    jdx = 0
 
     # define path and file name
     data_path = os.getcwd()
