@@ -20,6 +20,7 @@ def process_events(events):
         {'name': 'jet', 'label': 'jet'},
         {'name': 'MET', 'label': 'MET'},
         {'name': 'muon', 'label': 'muon'},
+        {'name': 'tau', 'label': 'tau'},
         # Add more particles/units as needed
     ]
 
