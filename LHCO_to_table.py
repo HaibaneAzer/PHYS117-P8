@@ -1,4 +1,5 @@
 from LHCO_reader import LHCO_reader
+import matplotlib as plt
 import os
 import pandas as pd
 
@@ -125,7 +126,7 @@ def main(idx, jdx):
     print()
     events = read_events_from_file(file_path)
     print()
-
+    
     if events is not None:
         # validate events
         validate_events(events)
