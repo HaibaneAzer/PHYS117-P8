@@ -1,5 +1,4 @@
 from LHCO_reader import LHCO_reader
-import matplotlib as plt
 import os
 import pandas as pd
 
