@@ -1,4 +1,5 @@
 from LHCO_reader import LHCO_reader
+from oxbridge_kinetics
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -6,6 +7,9 @@ import os
 def read_events_from_file(file_path):
     try:
         events = LHCO_reader.Events(f_name=file_path)
+        print("number func: ", events.number(False))
+        print("number_original func: ", events.number_original)
+        print("count: ", events.count())
         return events
     except Exception as e:
         print("Error reading file: {}".format(e))
