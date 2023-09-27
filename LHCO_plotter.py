@@ -33,7 +33,44 @@ def validate_events(events):
             raise ValueError("Each event must be a dictionary")
         # Additional validation checks for event data
 
-def LHCO_plot(events, file, x_data, y_data, p_name, p_prop):
+################ MATH ###############
+
+def calculate_HT(events, p_name):
+    data = events.column(p_name, 'PT')
+    HT = np.sum(data)
+    return HT
+
+def calculate_meff(events, p_name, HT):
+    data = events.column(p_name, 'MET')
+    meff_list = []
+    for MET in data:
+        meff_list.append(MET + HT)
+
+    return meff_list
+
+def objects_per_event(events):
+    particles = [
+    'photon',
+    'electron',
+    'muon',
+    'tau',
+    'jet',
+    'MET',
+    ]
+    tot_obj = 0
+    obj_per_event = []
+    for event in events:
+        objects_event = event.number()
+        for particle_name in particles:
+            tot_obj += objects_event[particle_name]
+        obj_per_event.append(tot_obj)
+        tot_obj = 0
+    
+    return obj_per_event
+
+#####################################
+
+def LHCO_line_plot(events, file, x_data, y_data, p_name, p_prop):
     """
     Calculate and append data points for plotting.
 
@@ -56,6 +93,18 @@ def LHCO_plot(events, file, x_data, y_data, p_name, p_prop):
 
     # normalize y
     normalized_y = y / np.sum(data)
+
+    # things to plot later... (currently not used)
+    ################################
+    # calculate HT (scalar sum PT)
+    HT = calculate_HT(events, p_name)
+
+    meff_list = calculate_meff(events, p_name, HT)
+
+    num_particles_per_event = objects_per_event(events)
+
+    # continue ...
+    ################################
 
     x_data.append(bincenters)
     y_data.append(normalized_y)
@@ -198,7 +247,7 @@ def file_processer(subdir_path, file_list, selected_files):
                 validate_events(events)
 
                 # Plot
-                legend_label = LHCO_plot(events, file_name, x_data, y_data, particles[particle_idx], props[prop_idx])
+                legend_label = LHCO_line_plot(events, file_name, x_data, y_data, particles[particle_idx], props[prop_idx])
                 legend_labels.append(legend_label)
     return x_data, y_data, legend_labels, particles[particle_idx], props[prop_idx]
 
