@@ -38,7 +38,7 @@ def LHCO_plot(events, file, x_data, y_data, p_name, p_prop):
 
     # create x/y-coordinates using data
     y, binEdges = np.histogram(data, bins=50) # number of x-axis-segments 
-    bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+    bincenters = 0.5*(binEdges[1:] + binEdges[:-1])
 
     # normalize y
     normalized_y = y / np.sum(data)
