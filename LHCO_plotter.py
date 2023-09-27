@@ -29,12 +29,12 @@ def validate_events(events):
             raise ValueError("Each event must be a dictionary")
         # Additional validation checks for event data
 
-def LHCO_plot(events, file, x_data, y_data):
+def LHCO_plot(events, file, x_data, y_data, p_name, p_prop):
     """
     Uses :class:`Event` column data to calculate x and y 
     data points, used for :func:`plot` found in :mod:`matplotlib`.
     """
-    data = events.column('jet', 'PT')  # Make data into a column
+    data = events.column(p_name, p_prop)  # Make data into a column
 
     # create x/y-coordinates using data
     y, binEdges = np.histogram(data, bins=50) # number of x-axis-segments 
@@ -63,7 +63,7 @@ def locate_file_prompter():
     # Prompt user to select a subdirectory
     print("Select a subdirectory:")
     for idx, subdir in enumerate(subdirectories):
-        print("{}. {}".format(idx+1 , subdir))
+        print("{}. {}".format(idx + 1 , subdir))
 
     subdir_idx = int(input("Enter the index of the subdirectory: ")) - 1
     selected_subdir = subdirectories[subdir_idx]
@@ -75,7 +75,7 @@ def locate_file_prompter():
     # Prompt user to select files
     print("\nSelect files from {}:".format(selected_subdir))
     for idx, file_name in enumerate(file_list):
-        print("{}. {}".format(idx+1, file_name))
+        print("{}. {}".format(idx + 1, file_name))
 
     selected_files = raw_input("Enter the indices of the files (comma-separated): ") # 2.x python only
     selected_files = selected_files.split(',')
@@ -88,13 +88,35 @@ def file_processer(subdir_path, file_list, selected_files):
     Turns file data into :mod:`matplotlib` variables that can be used
     in :func:`plot`.
     """
-    
+    # select particle and prop, then add to list
+    particles = [
+        'electron',
+        'jet',
+        'muon',
+        'tau',
+        'MET',
+    ]
+    props = [
+        'PT',
+        'phi',
+        'eta',
+    ]
+
+    print("\nSelect particle to look at")
+    for idx, particle in enumerate(particles):
+        print("{}. {}".format(idx + 1, particle))
+    particle_idx = int(input("Enter valid index of particle: ")) - 1
+
+    print("\nSelect properties to {}".format(particles[particle_idx]))
+    for idx, prop in enumerate(props):
+        print("{}. {}".format(idx + 1, prop))
+    prop_idx = int(input("Enter valid prop name of particle: ")) - 1
+
     # initialize lists to store data
     x_data = []
     y_data = []
 
     legend_labels = []
-
     # Process selected files
     for idx in selected_files:
         if 0 <= idx < len(file_list):
@@ -108,21 +130,26 @@ def file_processer(subdir_path, file_list, selected_files):
                 validate_events(events)
 
                 # Plot
-                legend_label = LHCO_plot(events, file_name, x_data, y_data)
+                legend_label = LHCO_plot(events, file_name, x_data, y_data, particles[particle_idx], props[prop_idx])
                 legend_labels.append(legend_label)
-    return x_data, y_data, legend_labels
+    return x_data, y_data, legend_labels, particles[particle_idx], props[prop_idx]
 
-def plot_line_graph(x_data, y_data, legend_labels):
+def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name):
     # plot all data into one graph
     fig = plt.figure()
     ax = fig.add_subplot(111)
+    unit = ""
 
     for x, y, label in zip(x_data, y_data, legend_labels):
         ax.plot(x, y, '-', label=label)
         
     ax.grid()
-    ax.set_title('jet PT')
-    ax.set_xlabel('PT (GeV)')
+    ax.set_title('{} {}'.format(particle_name, prop_name))
+    if prop_name == 'PT':
+        unit = "(GeV)"
+    elif prop_name == 'phi':
+        unit = "(angle)"
+    ax.set_xlabel('{} {}'.format(prop_name, unit))
     ax.set_ylabel('Relative Frequency')
     ax.legend()
 
@@ -130,10 +157,8 @@ def plot_line_graph(x_data, y_data, legend_labels):
 
 def main():
     subdir_path, file_list, selected_files = locate_file_prompter()
-
-    x_data, y_data, legend_labels = file_processer(subdir_path, file_list, selected_files)
-    
-    plot_line_graph(x_data, y_data, legend_labels)
+    x_data, y_data, legend_labels, particle_name, prop_name = file_processer(subdir_path, file_list, selected_files)
+    plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name)
 
 # run
 if __name__ == "__main__":
