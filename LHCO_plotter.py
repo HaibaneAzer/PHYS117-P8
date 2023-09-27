@@ -2,6 +2,7 @@ from LHCO_reader import LHCO_reader
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import sys
 
 def read_events_from_file(file_path):
     """ 
@@ -21,6 +22,9 @@ def validate_events(events):
     """
     Checks if object :class:`Events` has correct type. Mean't mostly to
     further validate file format.
+
+    Args:
+        events (LHCO_reader.Events): The LHCO events object.
     """
     if not isinstance(events, list):
         raise ValueError("Events must be a list")
@@ -31,8 +35,18 @@ def validate_events(events):
 
 def LHCO_plot(events, file, x_data, y_data, p_name, p_prop):
     """
-    Uses :class:`Event` column data to calculate x and y 
-    data points, used for :func:`plot` found in :mod:`matplotlib`.
+    Calculate and append data points for plotting.
+
+    Args:
+        events (LHCO_reader.Events): The LHCO events object.
+        file (str): The name of the file being processed.
+        x_data (list): List to store x-coordinates.
+        y_data (list): List to store y-coordinates.
+        p_name (str): The particle name.
+        p_prop (str): The particle property.
+
+    Returns:
+        str: The name of the file.
     """
     data = events.column(p_name, p_prop)  # Make data into a column
 
@@ -52,6 +66,11 @@ def locate_file_prompter():
     Uses path and directory information to locate necessary files
     NB: Important that the files you want to use is located in the 
     same directory as this code.
+
+    Returns:
+        str: Path of subdirectory.
+        list(str): a list of files names from path.
+        list(str): a list of indicies for corrosponding file in file list
     """
     # define path and file name
     data_path = os.getcwd()
@@ -87,9 +106,13 @@ def locate_file_prompter():
 
     # handle input exceptions
     try:
-        selected_files = raw_input("Enter the indices of the files (comma-separated): ") # 2.x python only
-        if "," not in selected_files:
-            raise ValueError("Missing comma separation")
+        # compatibility check
+        if (sys.version_info[0] == 2):
+            # python 2.x
+            selected_files = raw_input("Enter the indices of the files (comma-separated): ")
+        else:
+            # python 3.x
+            selected_files = input("Enter the indices of the files (comma-separated): ")
     except ValueError:
         print("Invalid input. Please enter a valid line of comma-separated integers.")
         return locate_file_prompter() # prompt retry
@@ -103,6 +126,18 @@ def file_processer(subdir_path, file_list, selected_files):
     """
     Turns file data into :mod:`matplotlib` variables that can be used
     in :func:`plot`.
+
+    Args:
+        subdir_path (str): path of subdirectory.
+        file_list (list(str)): list of file names found from path.
+        selected_files (list(int)): list of indicies for corrosponding file from file list.
+    
+    Return:
+        x_data (list(float)): List containing x-coordinates.
+        y_data (list(float)): List containing store y-coordinates.
+        legends_labels (list(str)): List containing file names
+        particles[particle_idx] (str): Name of particle
+        props[prop_idx] (str): name of property
     """
     # select particle and prop, then add to list
     particles = [
@@ -168,8 +203,15 @@ def file_processer(subdir_path, file_list, selected_files):
     return x_data, y_data, legend_labels, particles[particle_idx], props[prop_idx]
 
 def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name):
-    """  
-    Plots all data into one graph 
+    """
+    plot all data into one line plot 
+
+    Args:
+        x_data (list(float)): List containing x-coordinates.
+        y_data (list(float)): List containing y-coordinates.
+        legend_labels (list(str)): List containing file names
+        p_name (str): The particle name.
+        p_prop (str): The particle property.
     """
     fig = plt.figure()
     ax = fig.add_subplot(111)
