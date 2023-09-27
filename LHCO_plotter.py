@@ -14,7 +14,7 @@ def read_events_from_file(file_path):
         events = LHCO_reader.Events(f_name=file_path)
         return events
     except Exception as e:
-        print("Error reading file: {}".format(e))
+        print("Error reading file {}: {}".format(file_path, e))
         return None
 
 def validate_events(events):
@@ -65,7 +65,15 @@ def locate_file_prompter():
     for idx, subdir in enumerate(subdirectories):
         print("{}. {}".format(idx + 1 , subdir))
 
-    subdir_idx = int(input("Enter the index of the subdirectory: ")) - 1
+    # handle input exceptions
+    try:
+        subdir_idx = int(input("Enter the index of the subdirectory: ")) - 1
+        if subdir_idx < 0 or subdir_idx >= len(subdirectories):
+            raise ValueError("Invalid subdirectory index")
+    except ValueError:
+        print("Invalid input. Please enter a valid integer.")
+        return locate_file_prompter() # prompt retry
+    
     selected_subdir = subdirectories[subdir_idx]
 
     # List files in the selected subdirectory
@@ -77,7 +85,15 @@ def locate_file_prompter():
     for idx, file_name in enumerate(file_list):
         print("{}. {}".format(idx + 1, file_name))
 
-    selected_files = raw_input("Enter the indices of the files (comma-separated): ") # 2.x python only
+    # handle input exceptions
+    try:
+        selected_files = raw_input("Enter the indices of the files (comma-separated): ") # 2.x python only
+        if "," not in selected_files:
+            raise ValueError("Missing comma separation")
+    except ValueError:
+        print("Invalid input. Please enter a valid line of comma-separated integers.")
+        return locate_file_prompter() # prompt retry
+    
     selected_files = selected_files.split(',')
     selected_files = [int(idx.strip()) - 1 for idx in selected_files]
     
@@ -102,15 +118,32 @@ def file_processer(subdir_path, file_list, selected_files):
         'eta',
     ]
 
+    # print list of valid particles
     print("\nSelect particle to look at")
     for idx, particle in enumerate(particles):
         print("{}. {}".format(idx + 1, particle))
-    particle_idx = int(input("Enter valid index of particle: ")) - 1
-
+    
+    # handle prompt exceptions
+    try:
+        particle_idx = int(input("Enter valid index of particle: ")) - 1
+        if particle_idx < 0 or particle_idx >= len(particles):
+            raise ValueError("Invalid particle-list index")
+    except ValueError:
+        print("Invalid input. Please enter a valid index")
+        return file_processer(subdir_path, file_list, selected_files)
+    # print list of valid properties
     print("\nSelect properties to {}".format(particles[particle_idx]))
     for idx, prop in enumerate(props):
         print("{}. {}".format(idx + 1, prop))
-    prop_idx = int(input("Enter valid prop name of particle: ")) - 1
+    
+    # handle prompt exceptins
+    try:
+        prop_idx = int(input("Enter valid prop name of particle: ")) - 1
+        if prop_idx < 0 or prop_idx >= len(props):
+            raise ValueError("Invalid props-list index")
+    except ValueError:
+        print("Invalid input. Please enter a valid index")
+        return file_processer(subdir_path, file_list, selected_files)
 
     # initialize lists to store data
     x_data = []
@@ -135,20 +168,26 @@ def file_processer(subdir_path, file_list, selected_files):
     return x_data, y_data, legend_labels, particles[particle_idx], props[prop_idx]
 
 def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name):
-    # plot all data into one graph
+    """  
+    Plots all data into one graph 
+    """
     fig = plt.figure()
     ax = fig.add_subplot(111)
     unit = ""
 
+    # make plot for each data file
     for x, y, label in zip(x_data, y_data, legend_labels):
         ax.plot(x, y, '-', label=label)
         
     ax.grid()
     ax.set_title('{} {}'.format(particle_name, prop_name))
+
+    # give appropiate unit scale
     if prop_name == 'PT':
         unit = "(GeV)"
     elif prop_name == 'phi':
         unit = "(angle)"
+
     ax.set_xlabel('{} {}'.format(prop_name, unit))
     ax.set_ylabel('Relative Frequency')
     ax.legend()
