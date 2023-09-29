@@ -35,17 +35,32 @@ def validate_events(events):
 
 ################ MATH ###############
 
-def calculate_HT(events, p_name):
-    data = events.column(p_name, 'PT')
-    HT = np.sum(data)
-    return HT
+def calculate_HT(events):
+    particles = [
+    'photon',
+    'electron',
+    'muon',
+    'tau',
+    'jet',
+    ]
+    HT_list = []
+    for event_idx in range(len(events)):
+        HT = 0
+        # PT of all particles
+        for particle in particles:
+            if event_idx < len(events.column(particle, 'PT')):
+                p_PT = events.column(particle, 'PT')[event_idx]
+                HT += p_PT
+            else:
+                print(event_idx)
+    
+        HT_list.append(HT)
+    
+    return HT_list
 
-def calculate_meff(events, p_name, HT):
-    data = events.column(p_name, 'MET')
-    meff_list = []
-    for MET in data:
-        meff_list.append(MET + HT)
-
+def calculate_meff(events, HT_list):
+    MET_list = events.column('MET', 'PT')
+    meff_list = [MET + HT for MET, HT in zip(MET_list, HT_list)]
     return meff_list
 
 def objects_per_event(events):
@@ -97,9 +112,11 @@ def LHCO_line_plot(events, file, x_data, y_data, p_name, p_prop):
     # things to plot later... (currently not used)
     ################################
     # calculate HT (scalar sum PT)
-    HT = calculate_HT(events, p_name)
+    HT_list = calculate_HT(events)
+    meff_list = calculate_meff(events)
 
-    meff_list = calculate_meff(events, p_name, HT)
+    print("HT: ", HT_list)
+    print("meff: ", meff_list)
 
     num_particles_per_event = objects_per_event(events)
 
@@ -128,7 +145,61 @@ def locate_file_prompter():
     subdirectories = next(os.walk(data_path))[1]
     subdirectories.remove('.git') # ignore git folder
 
-    # Prompt user to select a subdirectory
+    subdir_dict = {}
+
+    # prompt choose all or only folders
+    print("Do you want to compare all files, or only folders?")
+    try:
+        choose_all_or_folder = raw_input("Answer (y/n): ")
+        if choose_all_or_folder == 'y':
+            # do new prompt
+            file_list = []
+            for idx in range(len(subdirectories)):
+                selected_subdir = subdirectories[idx]
+                # List files from all subdirectory
+                subdir_path = os.path.join(data_path, selected_subdir)
+                subdir_file_list = os.listdir(subdir_path)
+
+                # store in dict
+                subdir_dict[subdir_path] = subdir_file_list
+
+                # selected_subdir is all
+                selected_subdir = "all files"
+                for files in subdir_file_list:
+                    file_list.append(files)
+
+        elif choose_all_or_folder == 'n':
+            # Prompt user to select a subdirectory
+            print("Select a subdirectory:")
+            for idx, subdir in enumerate(subdirectories):
+                print("{}. {}".format(idx + 1 , subdir))
+
+            # handle input exceptions
+            try:
+                subdir_idx = int(input("Enter the index of the subdirectory: ")) - 1
+                if subdir_idx < 0 or subdir_idx >= len(subdirectories):
+                    raise ValueError("Invalid subdirectory index")
+            except ValueError:
+                print("Invalid input. Please enter a valid integer.")
+                return locate_file_prompter() # prompt retry
+                # continue with old
+            
+            # set in files
+            selected_subdir = subdirectories[subdir_idx]
+
+            # List files in the selected subdirectory
+            subdir_path = os.path.join(data_path, selected_subdir)
+            file_list = os.listdir(subdir_path)
+
+            # set in dict
+            subdir_dict[subdir_path] = file_list
+        else:
+            raise ValueError("Invalid char value")
+    except ValueError:
+        print(" ... ")
+        return locate_file_prompter() # retry
+
+    """ # Prompt user to select a subdirectory
     print("Select a subdirectory:")
     for idx, subdir in enumerate(subdirectories):
         print("{}. {}".format(idx + 1 , subdir))
@@ -140,13 +211,13 @@ def locate_file_prompter():
             raise ValueError("Invalid subdirectory index")
     except ValueError:
         print("Invalid input. Please enter a valid integer.")
-        return locate_file_prompter() # prompt retry
+        return locate_file_prompter() # prompt retry """
     
-    selected_subdir = subdirectories[subdir_idx]
+    """ selected_subdir = subdirectories[subdir_idx]
 
     # List files in the selected subdirectory
     subdir_path = os.path.join(data_path, selected_subdir)
-    file_list = os.listdir(subdir_path)
+    file_list = os.listdir(subdir_path) """
 
     # Prompt user to select files
     print("\nSelect files from {}:".format(selected_subdir))
@@ -169,9 +240,9 @@ def locate_file_prompter():
     selected_files = selected_files.split(',')
     selected_files = [int(idx.strip()) - 1 for idx in selected_files]
     
-    return subdir_path, file_list, selected_files
+    return subdir_dict, selected_files
 
-def file_processer(subdir_path, file_list, selected_files):
+def file_processer(subdir_dict, selected_files):
     """
     Turns file data into :mod:`matplotlib` variables that can be used
     in :func:`plot`.
@@ -214,7 +285,7 @@ def file_processer(subdir_path, file_list, selected_files):
             raise ValueError("Invalid particle-list index")
     except ValueError:
         print("Invalid input. Please enter a valid index")
-        return file_processer(subdir_path, file_list, selected_files)
+        return file_processer(subdir_dict, selected_files)
     # print list of valid properties
     print("\nSelect properties to {}".format(particles[particle_idx]))
     for idx, prop in enumerate(props):
@@ -227,7 +298,7 @@ def file_processer(subdir_path, file_list, selected_files):
             raise ValueError("Invalid props-list index")
     except ValueError:
         print("Invalid input. Please enter a valid index")
-        return file_processer(subdir_path, file_list, selected_files)
+        return file_processer(subdir_dict, selected_files)
 
     # initialize lists to store data
     x_data = []
@@ -235,20 +306,21 @@ def file_processer(subdir_path, file_list, selected_files):
 
     legend_labels = []
     # Process selected files
-    for idx in selected_files:
-        if 0 <= idx < len(file_list):
-            file_name = file_list[idx]
-            file_path = os.path.join(subdir_path, file_name)
+    for subdir_path, file_list in subdir_dict.items():
+        for idx in selected_files:
+            if 0 <= idx < len(file_list):
+                file_name = file_list[idx]
+                file_path = os.path.join(subdir_path, file_name)
 
-            # Read and convert file to event object
-            events = read_events_from_file(file_path)
-            if events is not None:
-                # Validate events
-                validate_events(events)
+                # Read and convert file to event object
+                events = read_events_from_file(file_path)
+                if events is not None:
+                    # Validate events
+                    validate_events(events)
 
-                # Plot
-                legend_label = LHCO_line_plot(events, file_name, x_data, y_data, particles[particle_idx], props[prop_idx])
-                legend_labels.append(legend_label)
+                    # Plot
+                    legend_label = LHCO_line_plot(events, file_name, x_data, y_data, particles[particle_idx], props[prop_idx])
+                    legend_labels.append(legend_label)
     return x_data, y_data, legend_labels, particles[particle_idx], props[prop_idx]
 
 def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name):
@@ -286,8 +358,8 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name):
     plt.show()
 
 def main():
-    subdir_path, file_list, selected_files = locate_file_prompter()
-    x_data, y_data, legend_labels, particle_name, prop_name = file_processer(subdir_path, file_list, selected_files)
+    subdir_dict, selected_files = locate_file_prompter()
+    x_data, y_data, legend_labels, particle_name, prop_name = file_processer(subdir_dict, selected_files)
     plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name)
 
 # run
