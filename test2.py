@@ -1,34 +1,19 @@
 from LHCO_reader import LHCO_reader
-import numpy as np
 
 events = LHCO_reader.Events(f_name="example.lhco")
 
-# Determine the number of events
+objects = ['photon', 'electron', 'muon', 'tau', 'jet']
 
-print(len(events))
-
-particles = [
-    'photon',
-    'electron',
-    'muon',
-    'tau',
-    'jet',
-    ]
-es = events
-max_length = max(len(es.column(particles[0], 'PT')),
-                 len(es.column(particles[1], 'PT')),
-                 len(es.column(particles[2], 'PT')),
-                 len(es.column(particles[3], 'PT')),
-                 len(es.column(particles[4], 'PT')))
-print(max_length)
 HT_sum_list = []
-for idx in range(max_length):
-    print(idx)
+meff_sum_list = []
+for event in events:
     HT = 0
-    for part in particles:
-        if idx < len(events.column(part, "PT")):
-            """ print("{}: ".format(part), len(events.column(part, 'PT'))) """
-            HT += events.column(part, 'PT')[idx]
+    for particle in objects:
+        if particle in event:
+            HT += sum(p["PT"] for p in event[particle])
     HT_sum_list.append(HT)
+    missing_ET = sum(p["PT"] for p in event['MET'])
+    meff_sum_list.append(missing_ET + HT)
+
 print(HT_sum_list)
-    
+print(meff_sum_list)
