@@ -65,17 +65,70 @@ def objects_per_event(events):
     'jet',
     'MET',
     ]
-    tot_obj = 0
     obj_per_event = []
+
     for event in events:
-        objects_event = event.number()
-        for particle_name in particles:
-            tot_obj += objects_event[particle_name]
-        obj_per_event.append(tot_obj)
         tot_obj = 0
+        for particle_name in particles:
+            tot_obj += event.number()[particle_name]
+        obj_per_event.append(tot_obj)
     
     return obj_per_event
 
+def electrons_muons_taus_per_event(events):
+    particles = [
+    'electron',
+    'muon',
+    'tau',
+    ]
+    # number of electrons/muons/taus in an event
+    electrons_per_event = []
+    muons_per_event = []
+    taus_per_event = []
+    for event_idx in range(len(events)):
+        electrons_per_event.append(len(events[event_idx][particles[0]]))
+        muons_per_event.append(len(events[event_idx][particles[1]]))
+        taus_per_event.append(len(events[event_idx][particles[2]]))
+
+    return electrons_per_event, muons_per_event, taus_per_event
+
+def largest_PT_in_event(events):
+    # PT of objects with largest PT in event (electron, muon, tau, jet, MET)
+    # also extracting phi values
+    objects_2 = ['electron', 'muon', 'tau', 'jet']
+
+    Largest_PT_per_event = []
+    phi_per_event_L_PT = []
+    phi_met_per_event = []
+    for event_idx in range(len(events)):
+        current_PT = 0 # reset PT
+        current_phi_highest_PT = 0 # reset phi
+        if events[event_idx]['MET']:
+            phi_met = events[event_idx]['MET'][0]['phi']
+            phi_met_per_event.append(phi_met)
+        # compare every object in event
+        for particle in objects_2: 
+            if events[event_idx][particle]: # check if the object is in event
+                for object_idx in range(len(events[event_idx][particle])):
+                    if current_PT < events[event_idx][particle][object_idx]['PT']:
+                        current_PT = events[event_idx][particle][object_idx]['PT']
+                        current_phi_highest_PT = events[event_idx][particle][object_idx]['phi']
+    
+        Largest_PT_per_event.append(current_PT)
+        phi_per_event_L_PT.append(current_phi_highest_PT)
+
+    return Largest_PT_per_event, delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT)
+
+def delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT):
+    # difference in phi between such objects and met
+
+    delta_phi_per_event = []
+
+    for i in range(len(phi_met_per_event)):
+        delta_phi_value = abs(phi_per_event_L_PT[i] - phi_met_per_event[i])
+        delta_phi_per_event.append(delta_phi_value)
+
+    return delta_phi_per_event
 #####################################
 
 #### prompts #####
@@ -91,7 +144,9 @@ def plot_selection_prompt():
     print("1. Particle Properties (PT, phi, eta)")
     print("2. HT")
     print("3. meff")
-    print("4. Objects per Event")
+    print("4. Objects per Event (histogram)")
+    print("5. Electrons, Muons, Taus per Event (histrogram)")
+    print("6. largest PT and delta_phi per Event")
     choice = raw_input("Enter the number corresponding to your choice: ")
 
     if choice == '1':
@@ -102,6 +157,10 @@ def plot_selection_prompt():
         return 'meff'
     elif choice == '4':
         return 'objects_per_event'
+    elif choice == '5':
+        return 'electrons_muons_taus_per_event'
+    elif choice == '6':
+        return 'largest_PT_in_event'
     else:
         print("Invalid choice. Please enter a valid option.")
         return plot_selection_prompt()
@@ -214,9 +273,9 @@ def process_selected_file(file_path):
         return None
 
 def processed_file_to_data(file_path_list, selected_files, plot_type):
+    legend_labels = []
     x_data = []
     y_data = []
-    legend_labels = []
 
     particle_name, prop_name = select_particle_and_property()
     for idx in selected_files:
@@ -225,13 +284,12 @@ def processed_file_to_data(file_path_list, selected_files, plot_type):
             events = process_selected_file(file_name)
 
             if events is not None:
-                process_data_for_plot(events, plot_type, x_data, y_data, particle_name, prop_name)
+                process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name)
                 legend_labels.append(file_name)
 
     return x_data, y_data, legend_labels, particle_name, prop_name
 
-def process_data_for_plot(events, plot_type, x_data, y_data, particle_name, prop_name):
-
+def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name):
     if plot_type == 'HT':
         HT_list, _ = calculate_HT_and_meff(events)
         y_HT, binEdges_HT = np.histogram(HT_list, bins=50)
@@ -239,7 +297,6 @@ def process_data_for_plot(events, plot_type, x_data, y_data, particle_name, prop
         normalized_y_HT = y_HT / np.sum(HT_list)
         x_data.append(bincenters_HT)
         y_data.append(normalized_y_HT)
-
     elif plot_type == 'meff':
         _, meff_list = calculate_HT_and_meff(events)
         y_meff, binEdges_meff = np.histogram(meff_list, bins=50)
@@ -247,12 +304,10 @@ def process_data_for_plot(events, plot_type, x_data, y_data, particle_name, prop
         normalized_y_meff = y_meff / np.sum(meff_list)
         x_data.append(bincenters_meff)
         y_data.append(normalized_y_meff)
-
     elif plot_type == 'objects_per_event':
         obj_per_event_data = objects_per_event(events)
         x_data.append(list(range(1, len(obj_per_event_data) + 1)))  # Event numbers
         y_data.append(obj_per_event_data)
-    
     elif plot_type == 'particle_properties':
         data = events.column(particle_name, prop_name)  
         y, binEdges = np.histogram(data, bins=50)
@@ -260,6 +315,22 @@ def process_data_for_plot(events, plot_type, x_data, y_data, particle_name, prop
         normalized_y = y / np.sum(data)
         x_data.append(bincenters)
         y_data.append(normalized_y)
+    elif plot_type == 'electrons_muons_taus_per_event':
+        electrons, muons, taus = electrons_muons_taus_per_event(events)
+        x_data.append(list(range(1, len(electrons) + 1)))
+        y_data.append(electrons)
+        x_data.append(list(range(1, len(muons) + 1)))
+        y_data.append(muons)
+        x_data.append(list(range(1, len(taus) + 1)))
+        y_data.append(taus)
+    elif plot_type == 'largest_PT_in_event':
+        largest_PT, delta_phi = largest_PT_in_event(events)
+        print(max(largest_PT))
+        print(max(delta_phi))
+        x_data.append(list(range(1, len(largest_PT) + 1)))  # Event numbers
+        y_data.append(largest_PT)
+        x_data.append(list(range(1, len(delta_phi) + 1)))  # Event numbers
+        y_data.append(delta_phi)
     
 
     return x_data, y_data
@@ -275,49 +346,110 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
         p_name (str): The particle name.
         p_prop (str): The particle property.
     """
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    unit = ""
+    if plot_type == 'electrons_muons_taus_per_event':
+        fig, axes = plt.subplots(3, 1, figsize=(8, 12), sharex=True)
 
-    # Extract file names from legend labels
-    legend_labels = [os.path.basename(label) for label in legend_labels]
+        particles = ['Electrons', 'Muons', 'Taus']
+        for i, ax in enumerate(axes):
+            # Count the occurrences of each value in y_data[i]
+            counts = {}
+            for value in y_data[i]:
+                if value in counts:
+                    counts[value] += 1
+                else:
+                    counts[value] = 1
 
-    # make plot for each data file
-    for label, x, y in zip(legend_labels, x_data, y_data):
-        ax.plot(x, y, '-', label=label)
+            # Separate the counts and values
+            values = list(counts.keys())
+            frequencies = list(counts.values())
+
+            # Create a bar plot
+            ax.bar(values, frequencies, align='center')
+            ax.set_title('{} per Event'.format(particles[i]))
+            ax.set_ylabel('Frequency')
+
+        plt.xlabel('Total Particles')
+        plt.tight_layout()
+        plt.show()
+    elif plot_type == 'largest_PT_in_event':
+        # Plot largest_PT and delta_phi separately
+        fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+
+        ax1.plot(x_data[0], y_data[0], '-', label='Largest PT')
+        ax1.grid()
+        ax1.set_ylabel('Largest PT (GeV)')
+        ax1.legend()
+
+        ax2.plot(x_data[1], y_data[1], '-', label='Delta Phi')
+        ax2.grid()
+        ax2.set_xlabel('Event')
+        ax2.set_ylabel('Delta Phi')
+        ax2.legend()
+
+        plt.show()
+    elif plot_type == 'objects_per_event':
+        # Count the occurrences of each value in y_data
+        counts = {}
+        for value in y_data[0]:
+            if value in counts:
+                counts[value] += 1
+            else:
+                counts[value] = 1
+
+        # Separate the counts and values
+        values = list(counts.keys())
+        frequencies = list(counts.values())
+
+        # Create a bar plot
+        plt.bar(values, frequencies, align='center')
+
+        plt.xlabel('Total Objects')
+        plt.ylabel('Frequency')
+        plt.title('Objects per Event')
+
+        plt.show()
+    else: # all other plot types as line graph
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        unit = ""
+
+        # Extract file names from legend labels
+        legend_labels = [os.path.basename(label) for label in legend_labels]
+        print(legend_labels)
+        print("Length of x_data: {}".format(len(x_data)))
+        print("Length of y_data: {}".format(len(y_data)))
+        # make plot for each data file
+        for label, x, y in zip(legend_labels, x_data, y_data):
+            print("Processing file: {}".format(label))
+            print("x_data: {}".format(x))
+            print("y_data: {}".format(y))
+            ax.plot(x, y, '-', label=label)
         
-    ax.grid()
+        ax.grid()
 
-    if plot_type == 'particle_properties':
-        ax.set_title('{} {}'.format(particle_name, prop_name))
-    elif plot_type in ['HT', 'meff']:
-        ax.set_title('{}'.format(particle_name))
-    elif plot_type == 'objects_per_event':
-        ax.set_title('{}'.format(plot_type))
+        if plot_type == 'particle_properties':
+            ax.set_title('{} {}'.format(particle_name, prop_name))
+        elif plot_type in ['HT', 'meff']:
+            ax.set_title('{}'.format(particle_name))
 
-    # give appropiate unit scale
-    if prop_name == 'PT':
-        unit = "(GeV)"
-    elif prop_name == 'phi':
-        unit = "(angle)"
+        # give appropiate unit scale
+        if prop_name == 'PT':
+            unit = "(GeV)"
+        elif prop_name == 'phi':
+            unit = "(angle)"
 
-    if plot_type == 'HT':
-        unit = "(GeV)"
-    elif plot_type == 'meff':
-        unit = "(GeV)"
-    elif plot_type == 'objects_per_event':
-        unit = "(amount)"
+        if plot_type == 'HT':
+            unit = "(GeV)"
+        elif plot_type == 'meff':
+            unit = "(GeV)"
 
-    # set y and x labels
-    if plot_type in ['HT', 'meff', 'particle_properties']:
-        ax.set_xlabel('{} {}'.format(prop_name, unit))
-        ax.set_ylabel('Relative Frequency')
-    elif plot_type == 'objects_per_event':
-        ax.set_xlabel('{} {}'.format('Events', unit))
-        ax.set_ylabel('Total Objects')
-    ax.legend()
+        # set y and x labels
+        if plot_type in ['HT', 'meff', 'particle_properties']:
+            ax.set_xlabel('{} {}'.format(prop_name, unit))
+            ax.set_ylabel('Relative Frequency')
+        ax.legend()
 
-    plt.show()
+        plt.show()
 
 def main():
     selected_files, file_list = locate_file_prompter()
@@ -327,7 +459,7 @@ def main():
     if plot_type == 'particle_properties':
         x_data, y_data, legend_labels, particle_name, prop_name = processed_file_to_data(file_list, selected_files, plot_type)
         plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plot_type)
-    elif plot_type in ['HT', 'meff', 'objects_per_event']:
+    elif plot_type in ['HT', 'meff', 'objects_per_event', 'electrons_muons_taus_per_event', 'largest_PT_in_event']:
         x_data, y_data, legend_labels, particle_name, prop_name = processed_file_to_data(file_list, selected_files, plot_type)
         plot_line_graph(x_data, y_data, legend_labels, plot_type, "", plot_type)
 
