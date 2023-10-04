@@ -289,19 +289,21 @@ def processed_file_to_data(file_path_list, selected_files, plot_type):
 
     return x_data, y_data, legend_labels, particle_name, prop_name
 
+def data_to_bincenter_y_norm(data, bins):
+    y, binEdges = np.histogram(data, bins=bins)
+    bincenters = 0.5*(binEdges[1:] + binEdges[:-1])
+    y_norm = y / np.sum(data)
+    return bincenters, y_norm
+
 def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name):
     if plot_type == 'HT':
         HT_list, _ = calculate_HT_and_meff(events)
-        y_HT, binEdges_HT = np.histogram(HT_list, bins=50)
-        bincenters_HT = 0.5*(binEdges_HT[1:] + binEdges_HT[:-1])
-        normalized_y_HT = y_HT / np.sum(HT_list)
+        bincenters_HT, normalized_y_HT = data_to_bincenter_y_norm(HT_list, 50)
         x_data.append(bincenters_HT)
         y_data.append(normalized_y_HT)
     elif plot_type == 'meff':
         _, meff_list = calculate_HT_and_meff(events)
-        y_meff, binEdges_meff = np.histogram(meff_list, bins=50)
-        bincenters_meff = 0.5*(binEdges_meff[1:] + binEdges_meff[:-1])
-        normalized_y_meff = y_meff / np.sum(meff_list)
+        bincenters_meff, normalized_y_meff = data_to_bincenter_y_norm(meff_list, 50)
         x_data.append(bincenters_meff)
         y_data.append(normalized_y_meff)
     elif plot_type == 'objects_per_event':
@@ -310,9 +312,7 @@ def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop
         y_data.append(obj_per_event_data)
     elif plot_type == 'particle_properties':
         data = events.column(particle_name, prop_name)  
-        y, binEdges = np.histogram(data, bins=50)
-        bincenters = 0.5*(binEdges[1:] + binEdges[:-1])
-        normalized_y = y / np.sum(data)
+        bincenters, normalized_y = data_to_bincenter_y_norm(data, 50)
         x_data.append(bincenters)
         y_data.append(normalized_y)
     elif plot_type == 'electrons_muons_taus_per_event':
@@ -324,13 +324,13 @@ def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop
         x_data.append(list(range(1, len(taus) + 1)))
         y_data.append(taus)
     elif plot_type == 'largest_PT_in_event':
-        largest_PT, delta_phi = largest_PT_in_event(events)
-        print(max(largest_PT))
-        print(max(delta_phi))
-        x_data.append(list(range(1, len(largest_PT) + 1)))  # Event numbers
-        y_data.append(largest_PT)
-        x_data.append(list(range(1, len(delta_phi) + 1)))  # Event numbers
-        y_data.append(delta_phi)
+        data_L_PT, data_delta_phi = largest_PT_in_event(events)
+        bincenters_L_PT, normalized_y_L_PT = data_to_bincenter_y_norm(data_L_PT, 50)
+        bincenters_delta_phi, normalized_y_delta_phi = data_to_bincenter_y_norm(data_delta_phi, 50)
+        x_data.append(bincenters_L_PT)  # Event numbers
+        y_data.append(normalized_y_L_PT)
+        x_data.append(bincenters_delta_phi)  # Event numbers
+        y_data.append(normalized_y_delta_phi)
     
 
     return x_data, y_data
@@ -375,12 +375,21 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
         # Plot largest_PT and delta_phi separately
         fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
 
-        ax1.plot(x_data[0], y_data[0], '-', label='Largest PT')
+        legend_labels = [os.path.basename(label) for label in legend_labels]
+        for label, x, y in zip(legend_labels, x_data, y_data):
+            print("Processing file: {}".format(label))
+            print("x_data: {}".format(x))
+            print("y_data: {}".format(y))
+            ax1.plot(x[0], y[0], '-', label=label)
         ax1.grid()
         ax1.set_ylabel('Largest PT (GeV)')
         ax1.legend()
 
-        ax2.plot(x_data[1], y_data[1], '-', label='Delta Phi')
+        for label, x, y in zip(legend_labels, x_data, y_data):
+            print("Processing file: {}".format(label))
+            print("x_data: {}".format(x))
+            print("y_data: {}".format(y))
+            ax2.plot(x[1], y[1], '-', label=label)
         ax2.grid()
         ax2.set_xlabel('Event')
         ax2.set_ylabel('Delta Phi')
