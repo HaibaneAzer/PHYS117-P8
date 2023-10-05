@@ -116,7 +116,8 @@ def largest_PT_in_event(events):
     
         Largest_PT_per_event.append(current_PT)
         phi_per_event_L_PT.append(current_phi_highest_PT)
-
+    print("Largest_PT_per_event length:", len(Largest_PT_per_event))
+    print("events length:", len(events))
     return Largest_PT_per_event, delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT)
 
 def delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT):
@@ -127,7 +128,7 @@ def delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT):
     for i in range(len(phi_met_per_event)):
         delta_phi_value = abs(phi_per_event_L_PT[i] - phi_met_per_event[i])
         delta_phi_per_event.append(delta_phi_value)
-
+    print("delta_phi_per_event length:", len(delta_phi_per_event))
     return delta_phi_per_event
 #####################################
 
@@ -293,7 +294,27 @@ def data_to_bincenter_y_norm(data, bins):
     y, binEdges = np.histogram(data, bins=bins)
     bincenters = 0.5*(binEdges[1:] + binEdges[:-1])
     y_norm = y / np.sum(data)
+    
     return bincenters, y_norm
+
+def data_to_bincenter_histogram(data, bins):
+    """
+    Calculates histogram and returns bin centers and histogram values.
+
+    Args:
+        data (list): List of data points.
+        num_bins (int): Number of bins for the histogram.
+
+    Returns:
+        tuple: Tuple containing bin centers and histogram values.
+    """
+    bin_edges = np.linspace(min(data), max(data), bins+1)
+    hist, _ = np.histogram(data, bins=bin_edges, density=True)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    print("bincenters length:", len(bin_centers))
+    print("bincenters max value:", max(bin_centers))
+    print("y_normalized max:", max(hist))
+    return bin_centers, hist
 
 def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name):
     if plot_type == 'HT':
@@ -324,13 +345,16 @@ def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop
         x_data.append(list(range(1, len(taus) + 1)))
         y_data.append(taus)
     elif plot_type == 'largest_PT_in_event':
-        data_L_PT, data_delta_phi = largest_PT_in_event(events)
-        bincenters_L_PT, normalized_y_L_PT = data_to_bincenter_y_norm(data_L_PT, 50)
-        bincenters_delta_phi, normalized_y_delta_phi = data_to_bincenter_y_norm(data_delta_phi, 50)
-        x_data.append(bincenters_L_PT)  # Event numbers
-        y_data.append(normalized_y_L_PT)
-        x_data.append(bincenters_delta_phi)  # Event numbers
-        y_data.append(normalized_y_delta_phi)
+        largest_PT, delta_phi = largest_PT_in_event(events)
+        
+        # Divide the events into bins
+        bin_size = len(largest_PT) // 100
+        binned_events = np.arange(0, len(largest_PT), bin_size)
+        binned_PT = [np.mean(largest_PT[i:i+bin_size]) for i in binned_events]
+        binned_phi = [np.mean(delta_phi[i:i+bin_size]) for i in binned_events]
+
+        x_data.append([binned_events, binned_events])
+        y_data.append([binned_PT, binned_phi])
     
 
     return x_data, y_data
@@ -372,29 +396,35 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
         plt.tight_layout()
         plt.show()
     elif plot_type == 'largest_PT_in_event':
-        # Plot largest_PT and delta_phi separately
-        fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+        # New code for binned events line plot
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 12))
 
+        # Extract file names from legend labels
         legend_labels = [os.path.basename(label) for label in legend_labels]
-        for label, x, y in zip(legend_labels, x_data, y_data):
+
+        print(legend_labels)
+        print("Length of x_data: {}".format(len(x_data)))
+        print("Length of y_data: {}".format(len(y_data)))
+
+        # Make plot for each data file
+        for label, (x_PT, x_phi), (y_PT, y_phi) in zip(legend_labels, x_data, y_data):
             print("Processing file: {}".format(label))
-            print("x_data: {}".format(x))
-            print("y_data: {}".format(y))
-            ax1.plot(x[0], y[0], '-', label=label)
+            print("x_data: {}".format(x_PT))
+            print("y_data: {}".format(y_PT))
+            ax1.plot(x_PT, y_PT, '-', label=label)
+            ax2.plot(x_phi, y_phi, '-', label=label)
+        
         ax1.grid()
+        ax1.set_xlabel('Events')
         ax1.set_ylabel('Largest PT (GeV)')
         ax1.legend()
 
-        for label, x, y in zip(legend_labels, x_data, y_data):
-            print("Processing file: {}".format(label))
-            print("x_data: {}".format(x))
-            print("y_data: {}".format(y))
-            ax2.plot(x[1], y[1], '-', label=label)
         ax2.grid()
         ax2.set_xlabel('Event')
-        ax2.set_ylabel('Delta Phi')
+        ax2.set_ylabel('Delta Phi (angle)')
         ax2.legend()
 
+        plt.tight_layout()
         plt.show()
     elif plot_type == 'objects_per_event':
         # Count the occurrences of each value in y_data
