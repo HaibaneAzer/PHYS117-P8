@@ -130,6 +130,21 @@ def delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT):
         delta_phi_per_event.append(delta_phi_value)
     print("delta_phi_per_event length:", len(delta_phi_per_event))
     return delta_phi_per_event
+
+def delta_R_per_event():
+    return None
+
+def signal_efficency():
+    # f(x|H_0)_0 and f(x|H_1)_1
+    # where x represents the value from x-axis (currently either meff or HT)
+    # H_0 is rejected signal and H_1 is wanted signal (either sphaleron or BH, or opposite).
+    # t_cut is the cut point on the graph chosen and represents where we either start or end the riemann sum.
+    # to find epsilon_b = area of f_0, and epsilon_s = area of f_1. W determines where the interval stops/starts.
+    # b = epsilon_b * N_b and s = epsilon_s * N_s (N is total number of events from each compared data)
+    # signal efficiency formula: optimal_selection = s / sqrt(s + b)
+
+
+    return None
 #####################################
 
 #### prompts #####
