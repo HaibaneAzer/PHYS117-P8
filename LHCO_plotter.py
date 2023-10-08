@@ -442,7 +442,7 @@ def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop
         x_data.append(list(range(1, len(taus) + 1)))
         y_data.append(taus)
     elif plot_type == 'largest_PT_in_event':
-        largest_PT, delta_phi = largest_PT_in_event(events)
+        largest_PT, delta_phi, _ = largest_PT_in_event(events)
         
         # Divide the events into bins
         bin_size = len(largest_PT) // 100
@@ -574,7 +574,7 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
         for label, x, y in zip(legend_labels, x_data, y_data):
             ax.plot(x, y, '-', label=label)
             if signal_eff and t_cut_optimal != None:
-                ax.axvline(x=t_cut_optimal, color='r', linestyle='--', label='T_cut Optimal ({})'.format(t_cut_optimal))
+                ax.axvline(x=t_cut_optimal, color='r', linestyle='--', label='T_cut Optimal ({}), with efficiency ({})'.format(t_cut_optimal, signal_eff))
         
         ax.grid()
 
