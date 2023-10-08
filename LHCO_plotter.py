@@ -97,15 +97,20 @@ def largest_PT_in_event(events):
     # also extracting phi values
     objects_2 = ['electron', 'muon', 'tau', 'jet']
 
-    Largest_PT_per_event = []
-    phi_per_event_L_PT = []
+    Largest_PT_per_event = [] # Largest PT variables
+    phi_per_event_L_PT = [] # phi variables
     phi_met_per_event = []
+    eta_per_event_L_PT = [] # Eta variables
+    eta_met_per_event = []
     for event_idx in range(len(events)):
         current_PT = 0 # reset PT
         current_phi_highest_PT = 0 # reset phi
+        current_eta_highest_PT = 0 # reset eta
         if events[event_idx]['MET']:
             phi_met = events[event_idx]['MET'][0]['phi']
+            eta_met = events[event_idx]['MET'][0]['eta']
             phi_met_per_event.append(phi_met)
+            eta_met_per_event.append(eta_met)
         # compare every object in event
         for particle in objects_2: 
             if events[event_idx][particle]: # check if the object is in event
@@ -113,12 +118,17 @@ def largest_PT_in_event(events):
                     if current_PT < events[event_idx][particle][object_idx]['PT']:
                         current_PT = events[event_idx][particle][object_idx]['PT']
                         current_phi_highest_PT = events[event_idx][particle][object_idx]['phi']
+                        current_eta_highest_PT = events[event_idx][particle][object_idx]['eta']
+
     
         Largest_PT_per_event.append(current_PT)
         phi_per_event_L_PT.append(current_phi_highest_PT)
-    print("Largest_PT_per_event length:", len(Largest_PT_per_event))
-    print("events length:", len(events))
-    return Largest_PT_per_event, delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT)
+        eta_per_event_L_PT.append(current_eta_highest_PT)
+    
+    delta_eta = delta_eta_per_event(eta_met_per_event, eta_per_event_L_PT)
+    delta_phi = delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT)
+    delta_R = delta_R_per_event(delta_phi, delta_eta)
+    return Largest_PT_per_event, delta_phi, delta_R
 
 def delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT):
     # difference in phi between such objects and met
@@ -128,13 +138,32 @@ def delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT):
     for i in range(len(phi_met_per_event)):
         delta_phi_value = abs(phi_per_event_L_PT[i] - phi_met_per_event[i])
         delta_phi_per_event.append(delta_phi_value)
-    print("delta_phi_per_event length:", len(delta_phi_per_event))
+
     return delta_phi_per_event
 
-def delta_R_per_event():
-    return None
+def delta_eta_per_event(eta_met_per_event, eta_per_event_L_PT):
+    delta_eta_per_event = []
 
-def signal_efficency():
+    for i in range(len(eta_met_per_event)):
+        delta_eta_value = abs(eta_per_event_L_PT[i] - eta_met_per_event[i])
+        delta_eta_per_event.append(delta_eta_value)
+
+    return delta_eta_per_event
+
+def delta_R_per_event(delta_phi, delta_eta):
+    # delta_R = sqrt(delta_phi^2 + delta_eta^2)
+    delta_R_per_event = []
+    for i in range(len(delta_eta)):
+        delta_R_value = np.sqrt(delta_phi[i]**2 + delta_eta[i]**2)
+        delta_R_per_event.append(delta_R_value)
+
+    return delta_R_per_event
+
+def calculate_F1_score(signal_eff, background_rejection):
+    # recommended method to find optimal t_cut by chatgpt
+    return 2 * (signal_eff * background_rejection) / (signal_eff + background_rejection)
+
+def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, num_events): # NB!: b = file1, s = file2
     # f(x|H_0)_0 and f(x|H_1)_1
     # where x represents the value from x-axis (currently either meff or HT)
     # H_0 is rejected signal and H_1 is wanted signal (either sphaleron or BH, or opposite).
@@ -143,8 +172,48 @@ def signal_efficency():
     # b = epsilon_b * N_b and s = epsilon_s * N_s (N is total number of events from each compared data)
     # signal efficiency formula: optimal_selection = s / sqrt(s + b)
 
+    # don't need to iterate to the edges since t_cut will most likely be somewhere in the middle.
+    # also prevents index error.
+    t = min(len(x_data_file1), len(x_data_file2))
+    N_b = num_events[0] # (might change for actual event number)
+    N_s = num_events[1]
+    signal_eff = 0
+    optimal_t_cut = None
+    max_F1_score = 0
+    attempts = []
+    print("x_data_file1:", x_data_file1)
+    print("x_data_file2:", x_data_file2)
+    # pick t_cut
+    for t_cut in range(t-1):
+        epsilon_b = sum((x_data_file1[t_cut+1] - x_data_file1[t_cut]) * y_data_file1[t_cut:])
+        epsilon_s = sum((x_data_file2[t_cut+1] - x_data_file2[t_cut]) * y_data_file2[t_cut:])
 
-    return None
+        b = epsilon_b * N_b
+        s = epsilon_s * N_s
+        current_signal_eff = (s / np.sqrt(s + b))
+        background_rejection = 1 - b / N_b
+
+        F1_score = calculate_F1_score(current_signal_eff, background_rejection)
+        # f1 score method
+        if F1_score > max_F1_score:
+            max_F1_score = F1_score
+            optimal_t_cut = x_data_file1[t_cut]
+            signal_eff = current_signal_eff
+            attempts.append(optimal_t_cut)
+        
+        # get highest signal_eff method
+        """ if signal_eff < current_signal_eff:
+            signal_eff = current_signal_eff
+            optimal_t_cut = x_data_file1[t_cut]
+            attempts.append(optimal_t_cut) # find when signal efficiency is last defined (aka. when max) """
+        print("current signal efficiencies:", current_signal_eff)
+
+    print("Signal efficiency given t_cut: {}".format(optimal_t_cut))
+    print("all attempts:", attempts)
+    print("Signal_eff =", signal_eff)
+    return signal_eff, optimal_t_cut
+
+    
 #####################################
 
 #### prompts #####
@@ -158,11 +227,13 @@ def plot_selection_prompt():
     """
     print("Select the type of plots:")
     print("1. Particle Properties (PT, phi, eta)")
-    print("2. HT")
-    print("3. meff")
+    print("2. HT and signal_efficiency")
+    print("3. meff and signal_efficiency")
     print("4. Objects per Event (histogram)")
     print("5. Electrons, Muons, Taus per Event (histrogram)")
     print("6. largest PT and delta_phi per Event")
+    print("7: delta_R per event")
+    
     choice = raw_input("Enter the number corresponding to your choice: ")
 
     if choice == '1':
@@ -177,6 +248,8 @@ def plot_selection_prompt():
         return 'electrons_muons_taus_per_event'
     elif choice == '6':
         return 'largest_PT_in_event'
+    elif choice == '7':
+        return 'delta_R_per_event'
     else:
         print("Invalid choice. Please enter a valid option.")
         return plot_selection_prompt()
@@ -292,18 +365,25 @@ def processed_file_to_data(file_path_list, selected_files, plot_type):
     legend_labels = []
     x_data = []
     y_data = []
+    num_events_list = []
+    signal_eff = None
+    t_cut_optimal = None
 
     particle_name, prop_name = select_particle_and_property()
     for idx in selected_files:
         if 0 <= idx < len(file_path_list):
             file_name = file_path_list[idx]
             events = process_selected_file(file_name)
+            num_events_list.append(len(events))
 
             if events is not None:
-                process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name)
+                x_data, y_data = process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name)
                 legend_labels.append(file_name)
+    # get signal efficiency if only 2 files and HT, meff data is analyzed
+    if (len(selected_files) == 2) and (plot_type in ['HT', 'meff']):
+        signal_eff, t_cut_optimal = signal_efficiency(x_data[0], y_data[0], x_data[1], y_data[1], num_events_list) # file 1, file 2
 
-    return x_data, y_data, legend_labels, particle_name, prop_name
+    return x_data, y_data, legend_labels, particle_name, prop_name, signal_eff, t_cut_optimal
 
 def data_to_bincenter_y_norm(data, bins):
     y, binEdges = np.histogram(data, bins=bins)
@@ -326,33 +406,35 @@ def data_to_bincenter_histogram(data, bins):
     bin_edges = np.linspace(min(data), max(data), bins+1)
     hist, _ = np.histogram(data, bins=bin_edges, density=True)
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    print("bincenters length:", len(bin_centers))
-    print("bincenters max value:", max(bin_centers))
-    print("y_normalized max:", max(hist))
     return bin_centers, hist
 
 def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name):
     if plot_type == 'HT':
         HT_list, _ = calculate_HT_and_meff(events)
         bincenters_HT, normalized_y_HT = data_to_bincenter_y_norm(HT_list, 50)
+
         x_data.append(bincenters_HT)
         y_data.append(normalized_y_HT)
     elif plot_type == 'meff':
         _, meff_list = calculate_HT_and_meff(events)
         bincenters_meff, normalized_y_meff = data_to_bincenter_y_norm(meff_list, 50)
+
         x_data.append(bincenters_meff)
         y_data.append(normalized_y_meff)
     elif plot_type == 'objects_per_event':
         obj_per_event_data = objects_per_event(events)
+
         x_data.append(list(range(1, len(obj_per_event_data) + 1)))  # Event numbers
         y_data.append(obj_per_event_data)
     elif plot_type == 'particle_properties':
         data = events.column(particle_name, prop_name)  
         bincenters, normalized_y = data_to_bincenter_y_norm(data, 50)
+
         x_data.append(bincenters)
         y_data.append(normalized_y)
     elif plot_type == 'electrons_muons_taus_per_event':
         electrons, muons, taus = electrons_muons_taus_per_event(events)
+
         x_data.append(list(range(1, len(electrons) + 1)))
         y_data.append(electrons)
         x_data.append(list(range(1, len(muons) + 1)))
@@ -370,11 +452,18 @@ def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop
 
         x_data.append([binned_events, binned_events])
         y_data.append([binned_PT, binned_phi])
+    elif plot_type == 'delta_R_per_event':
+        largest_PT, _, delta_R = largest_PT_in_event(events)
+         # Divide the events into bins
+        bin_size = len(largest_PT) // 100
+        binned_events = np.arange(0, len(largest_PT), bin_size)
+        binned_R = [np.mean(delta_R[i:i+bin_size]) for i in binned_events]
     
-
+        x_data.append(binned_events)
+        y_data.append(binned_R)
     return x_data, y_data
 
-def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plot_type):
+def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plot_type, signal_eff, t_cut_optimal):
     """
     plot all data into one line plot 
 
@@ -417,15 +506,8 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
         # Extract file names from legend labels
         legend_labels = [os.path.basename(label) for label in legend_labels]
 
-        print(legend_labels)
-        print("Length of x_data: {}".format(len(x_data)))
-        print("Length of y_data: {}".format(len(y_data)))
-
         # Make plot for each data file
         for label, (x_PT, x_phi), (y_PT, y_phi) in zip(legend_labels, x_data, y_data):
-            print("Processing file: {}".format(label))
-            print("x_data: {}".format(x_PT))
-            print("y_data: {}".format(y_PT))
             ax1.plot(x_PT, y_PT, '-', label=label)
             ax2.plot(x_phi, y_phi, '-', label=label)
         
@@ -438,6 +520,25 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
         ax2.set_xlabel('Event')
         ax2.set_ylabel('Delta Phi (angle)')
         ax2.legend()
+
+        plt.tight_layout()
+        plt.show()
+    elif plot_type == 'delta_R_per_event':
+        # New code for binned events line plot
+        fig = plt.figure()
+        ax1 = fig.add_subplot(111)
+
+        # Extract file names from legend labels
+        legend_labels = [os.path.basename(label) for label in legend_labels]
+
+        # Make plot for each data file
+        for label, x_R, y_R in zip(legend_labels, x_data, y_data):
+            ax1.plot(x_R, y_R, '-', label=label)
+        
+        ax1.grid()
+        ax1.set_xlabel('Events')
+        ax1.set_ylabel('Delta R (angle)')
+        ax1.legend()
 
         plt.tight_layout()
         plt.show()
@@ -469,15 +570,11 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
 
         # Extract file names from legend labels
         legend_labels = [os.path.basename(label) for label in legend_labels]
-        print(legend_labels)
-        print("Length of x_data: {}".format(len(x_data)))
-        print("Length of y_data: {}".format(len(y_data)))
         # make plot for each data file
         for label, x, y in zip(legend_labels, x_data, y_data):
-            print("Processing file: {}".format(label))
-            print("x_data: {}".format(x))
-            print("y_data: {}".format(y))
             ax.plot(x, y, '-', label=label)
+            if signal_eff and t_cut_optimal != None:
+                ax.axvline(x=t_cut_optimal, color='r', linestyle='--', label='T_cut Optimal ({})'.format(t_cut_optimal))
         
         ax.grid()
 
@@ -512,10 +609,10 @@ def main():
 
     if plot_type == 'particle_properties':
         x_data, y_data, legend_labels, particle_name, prop_name = processed_file_to_data(file_list, selected_files, plot_type)
-        plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plot_type)
-    elif plot_type in ['HT', 'meff', 'objects_per_event', 'electrons_muons_taus_per_event', 'largest_PT_in_event']:
-        x_data, y_data, legend_labels, particle_name, prop_name = processed_file_to_data(file_list, selected_files, plot_type)
-        plot_line_graph(x_data, y_data, legend_labels, plot_type, "", plot_type)
+        plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plot_type, None, None)
+    elif plot_type in ['HT', 'meff', 'objects_per_event', 'electrons_muons_taus_per_event', 'largest_PT_in_event', 'delta_R_per_event']:
+        x_data, y_data, legend_labels, particle_name, prop_name, signal_eff, t_cut_optimal = processed_file_to_data(file_list, selected_files, plot_type)
+        plot_line_graph(x_data, y_data, legend_labels, plot_type, "", plot_type, signal_eff, t_cut_optimal)
 
 # run
 if __name__ == "__main__":
