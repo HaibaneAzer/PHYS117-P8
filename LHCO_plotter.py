@@ -185,8 +185,8 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     print("x_data_file2:", x_data_file2)
     # pick t_cut
     for t_cut in range(t-1):
-        epsilon_b = sum((x_data_file1[t_cut+1] - x_data_file1[t_cut]) * y_data_file1[t_cut:])
-        epsilon_s = sum((x_data_file2[t_cut+1] - x_data_file2[t_cut]) * y_data_file2[t_cut:])
+        epsilon_b = sum((x_data_file1[t_cut+1] - x_data_file1[t_cut]) * y_data_file1[:t_cut])
+        epsilon_s = sum((x_data_file2[t_cut+1] - x_data_file2[t_cut]) * y_data_file2[:t_cut])
 
         b = epsilon_b * N_b
         s = epsilon_s * N_s
@@ -195,17 +195,17 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
 
         F1_score = calculate_F1_score(current_signal_eff, background_rejection)
         # f1 score method
-        if F1_score > max_F1_score:
+        """ if F1_score > max_F1_score:
             max_F1_score = F1_score
             optimal_t_cut = x_data_file1[t_cut]
             signal_eff = current_signal_eff
-            attempts.append(optimal_t_cut)
+            attempts.append(optimal_t_cut) """
         
         # get highest signal_eff method
-        """ if signal_eff < current_signal_eff:
+        if signal_eff < current_signal_eff:
             signal_eff = current_signal_eff
             optimal_t_cut = x_data_file1[t_cut]
-            attempts.append(optimal_t_cut) # find when signal efficiency is last defined (aka. when max) """
+            attempts.append(optimal_t_cut) # find when signal efficiency is last defined (aka. when max)
         print("current signal efficiencies:", current_signal_eff)
 
     print("Signal efficiency given t_cut: {}".format(optimal_t_cut))
@@ -455,12 +455,10 @@ def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop
     elif plot_type == 'delta_R_per_event':
         largest_PT, _, delta_R = largest_PT_in_event(events)
          # Divide the events into bins
-        bin_size = len(largest_PT) // 100
-        binned_events = np.arange(0, len(largest_PT), bin_size)
-        binned_R = [np.mean(delta_R[i:i+bin_size]) for i in binned_events]
+        bincenters_R, y_normalized = data_to_bincenter_y_norm(delta_R, 50)
     
-        x_data.append(binned_events)
-        y_data.append(binned_R)
+        x_data.append(bincenters_R)
+        y_data.append(y_normalized)
     return x_data, y_data
 
 def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plot_type, signal_eff, t_cut_optimal):
