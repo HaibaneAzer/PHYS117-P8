@@ -1,0 +1,260 @@
+import numpy as np
+
+### main computational functions ###
+
+def calculate_HT_and_meff(events):
+    objects = ['photon', 'electron', 'muon', 'tau', 'jet']
+
+    HT_sum_list = []
+    meff_sum_list = []
+    for event in events:
+        HT = 0
+        for particle in objects:
+            if particle in event:
+                HT += sum(p["PT"] for p in event[particle])
+        HT_sum_list.append(HT)
+        missing_ET = sum(p["PT"] for p in event['MET'])
+        meff_sum_list.append(missing_ET + HT)
+    
+    return HT_sum_list, meff_sum_list
+
+def objects_per_event(events):
+    particles = [
+    'photon',
+    'electron',
+    'muon',
+    'tau',
+    'jet',
+    'MET',
+    ]
+    obj_per_event = []
+
+    for event in events:
+        tot_obj = 0
+        for particle_name in particles:
+            tot_obj += event.number()[particle_name]
+        obj_per_event.append(tot_obj)
+    
+    return obj_per_event
+
+def electrons_muons_taus_per_event(events):
+    particles = [
+    'electron',
+    'muon',
+    'tau',
+    ]
+    # number of electrons/muons/taus in an event
+    electrons_per_event = []
+    muons_per_event = []
+    taus_per_event = []
+    for event_idx in range(len(events)):
+        electrons_per_event.append(len(events[event_idx][particles[0]]))
+        muons_per_event.append(len(events[event_idx][particles[1]]))
+        taus_per_event.append(len(events[event_idx][particles[2]]))
+
+    return electrons_per_event, muons_per_event, taus_per_event
+
+def largest_PT_in_event(events):
+    # PT of objects with largest PT in event (electron, muon, tau, jet, MET)
+    # also extracting phi values
+    objects_2 = ['electron', 'muon', 'tau', 'jet']
+
+    Largest_PT_per_event = [] # Largest PT variables
+    phi_per_event_L_PT = [] # phi variables
+    phi_met_per_event = []
+    for event_idx in range(len(events)):
+        current_PT = 0 # reset PT
+        current_phi_highest_PT = 0 # reset phi
+        if events[event_idx]['MET']:
+            phi_met = events[event_idx]['MET'][0]['phi']
+            phi_met_per_event.append(phi_met)
+        # compare every object in event
+        for particle in objects_2: 
+            if events[event_idx][particle]: # check if the object is in event
+                for object_idx in range(len(events[event_idx][particle])):
+                    if current_PT < events[event_idx][particle][object_idx]['PT']:
+                        current_PT = events[event_idx][particle][object_idx]['PT']
+                        current_phi_highest_PT = events[event_idx][particle][object_idx]['phi']
+
+    
+        Largest_PT_per_event.append(current_PT)
+        phi_per_event_L_PT.append(current_phi_highest_PT)
+    
+    delta_phi = delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT)
+    
+    return Largest_PT_per_event, delta_phi
+
+def delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT):
+    # difference in phi between such objects and met
+
+    delta_phi_per_event = []
+
+    for i in range(len(phi_met_per_event)):
+        delta_phi_value = abs(phi_per_event_L_PT[i] - phi_met_per_event[i])
+        delta_phi_per_event.append(delta_phi_value)
+
+    return delta_phi_per_event
+
+def delta_eta_per_event(eta_met_per_event, eta_per_event_L_PT):
+    delta_eta_per_event = []
+
+    for i in range(len(eta_met_per_event)):
+        delta_eta_value = abs(eta_per_event_L_PT[i] - eta_met_per_event[i])
+        delta_eta_per_event.append(delta_eta_value)
+
+    return delta_eta_per_event
+
+def delta_R_per_event(events, particle):
+
+    # PT of objects with largest PT in event (electron, muon, tau, jet, MET)
+    # also extracting phi values
+
+    phi_per_event_L_PT = [] # phi variables
+    phi_met_per_event = []
+    eta_per_event_L_PT = [] # Eta variables
+    eta_met_per_event = []
+    for event_idx in range(len(events)):
+        current_PT = 0 # reset PT
+        current_phi_highest_PT = 0 # reset phi
+        current_eta_highest_PT = 0 # reset eta
+        if events[event_idx]['MET']:
+            phi_met = events[event_idx]['MET'][0]['phi']
+            eta_met = events[event_idx]['MET'][0]['eta']
+            phi_met_per_event.append(phi_met)
+            eta_met_per_event.append(eta_met)
+        # compare every object in event
+    
+        if events[event_idx][particle]: # check if the object is in event
+            for object_idx in range(len(events[event_idx][particle])):
+                if current_PT < events[event_idx][particle][object_idx]['PT']:
+                    current_PT = events[event_idx][particle][object_idx]['PT']
+                    current_phi_highest_PT = events[event_idx][particle][object_idx]['phi']
+                    current_eta_highest_PT = events[event_idx][particle][object_idx]['eta']
+
+    
+        phi_per_event_L_PT.append(current_phi_highest_PT)
+        eta_per_event_L_PT.append(current_eta_highest_PT)
+
+    delta_eta = delta_eta_per_event(eta_met_per_event, eta_per_event_L_PT)
+    delta_phi = delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT)
+    
+
+    # delta_R = sqrt(delta_phi^2 + delta_eta^2)
+    delta_R_per_event = []
+    for i in range(len(delta_eta)):
+        delta_R_value = np.sqrt(delta_phi[i]**2 + delta_eta[i]**2)
+        delta_R_per_event.append(delta_R_value)
+
+    return delta_R_per_event
+
+def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, num_events): # NB!: b = file1, s = file2
+    # f(x|H_0)_0 and f(x|H_1)_1
+    # where x represents the value from x-axis (currently either meff or HT)
+    # H_0 is rejected signal and H_1 is wanted signal (either sphaleron or BH, or opposite).
+    # t_cut is the cut point on the graph chosen and represents where we either start or end the riemann sum.
+    # to find epsilon_b = area of f_0, and epsilon_s = area of f_1. W determines where the interval stops/starts.
+    # b = epsilon_b * N_b and s = epsilon_s * N_s (N is total number of events from each compared data)
+    # signal efficiency formula: optimal_selection = s / sqrt(s + b)
+
+    # don't need to iterate to the edges since t_cut will most likely be somewhere in the middle.
+    # also prevents index error.
+
+    ### NB: s / (s + b) zero_to_tcut + b / (b + s) t_cut_to_end = 1 doesn't happen. s of file 1 =/= s of file 2?
+
+    t = min(len(x_data_file1), len(x_data_file2))
+    N_b = num_events[0] # (might change for actual event number)
+    N_s = num_events[1]
+    signal_eff = 0
+    signal_eff_list = []
+    optimal_t_cut = 0
+    optimal_t_list = []
+    attempts = []
+    print("b (don't want):", x_data_file1)
+    print("s (want):", x_data_file2)
+    # lists for plotting efficiency
+    signal_efficiencies_list = []
+    y_value_s_b_list = []
+    x_values_list = []
+    x_value_s_b_list = []
+    # choose summing direction
+    sum_direction = None
+    while sum_direction not in ['1', '2']:
+        print("sum from:")
+        print("1: zero to t-cut")
+        print("2: t-cut to end")
+        sum_direction = raw_input("Selected integer corrosponding to your choice: ")
+        if sum_direction not in ['1', '2']:
+            print("Wrong value. Try again")
+    # pick t_cut
+    for t_cut in range(t-1):
+        if sum_direction == "1":
+            boxes_b = [(x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height for height in y_data_file1[:t_cut+1]]
+            print(len(boxes_b), len(y_data_file1), len(x_data_file1))
+            epsilon_b = float(sum(boxes_b))
+            boxes_s = [(x_data_file2[t_cut+1] - x_data_file2[t_cut]) * height for height in y_data_file2[:t_cut+1]]
+            epsilon_s = float(sum(boxes_s))
+            
+        else:
+            boxes_b = [(x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height for height in y_data_file1[t_cut:]]
+            epsilon_b = float(sum(boxes_b))
+            boxes_s = [(x_data_file2[t_cut+1] - x_data_file2[t_cut]) * height for height in y_data_file2[t_cut:]]
+            epsilon_s = float(sum(boxes_s))
+        b = epsilon_b * N_b
+        s = epsilon_s * N_s
+        current_signal_eff = (s / (s + b))
+        
+        # get highest signal_eff method
+        if signal_eff < current_signal_eff:
+            signal_eff = current_signal_eff
+            optimal_t_cut = x_data_file1[t_cut]
+            attempts.append(optimal_t_cut) # find when signal efficiency is last defined (aka. when max)
+
+        signal_efficiencies_list.append(current_signal_eff)
+        x_values_list.append(x_data_file1[t_cut])
+
+    y_value_s_b_list.append(signal_efficiencies_list)
+    x_value_s_b_list.append(x_values_list)
+    signal_eff_list.append(signal_eff)
+    optimal_t_list.append(optimal_t_cut)
+    # sum for opposite s and b
+    signal_efficiencies_list = []
+    x_values_list = []
+    signal_eff = 0
+    optimal_t_cut = 0
+    for t_cut in range(t-1):
+        if sum_direction == "2":
+            boxes_s = [(x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height for height in y_data_file1[:t_cut+1]]
+            epsilon_s = float(sum(boxes_s))
+            boxes_b = [(x_data_file2[t_cut+1] - x_data_file2[t_cut]) * height for height in y_data_file2[:t_cut+1]]
+            epsilon_b = float(sum(boxes_b))
+            
+        else:
+            boxes_s = [(x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height for height in y_data_file1[t_cut:]]
+            epsilon_s = float(sum(boxes_s))
+            boxes_b = [(x_data_file2[t_cut+1] - x_data_file2[t_cut]) * height for height in y_data_file2[t_cut:]]
+            epsilon_b = float(sum(boxes_b))
+
+        b = epsilon_b * N_b
+        s = epsilon_s * N_s
+        current_signal_eff = (s / (s + b))
+        
+        # get highest signal_eff method
+        if signal_eff < current_signal_eff:
+            signal_eff = current_signal_eff
+            optimal_t_cut = x_data_file1[t_cut]
+            attempts.append(optimal_t_cut) # find when signal efficiency is last defined (aka. when max)
+
+        signal_efficiencies_list.append(current_signal_eff)
+        x_values_list.append(x_data_file1[t_cut])
+    
+    y_value_s_b_list.append(signal_efficiencies_list)
+    x_value_s_b_list.append(x_values_list)
+    signal_eff_list.append(signal_eff)
+    optimal_t_list.append(optimal_t_cut)
+    print(signal_eff_list)
+    print(optimal_t_list)
+
+    print("Signal efficiency given t_cut: {}".format(optimal_t_cut))
+    print("all attempts:", attempts)
+    print("Signal_eff =", signal_eff)
+    return signal_eff_list, optimal_t_list, y_value_s_b_list, x_value_s_b_list
