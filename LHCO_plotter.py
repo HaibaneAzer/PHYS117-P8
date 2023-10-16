@@ -410,6 +410,8 @@ def processed_file_to_data(file_path_list, selected_files, plot_type):
     num_events_list = []
     signal_eff = None
     t_cut_optimal = None
+    signal_list = None
+    t_list = None
 
     particle_name, prop_name = select_particle_and_property(plot_type)
     for idx in selected_files:
@@ -613,16 +615,27 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
 
     elif plot_type in ['HT', 'meff']:
         fig = plt.figure()
-        ax1 = fig.add_subplot(211)
-        ax2 = fig.add_subplot(212)
+        if signal_eff and t_cut_optimal != None:
+            ax1 = fig.add_subplot(211)
+            ax2 = fig.add_subplot(212)
+        else:
+            ax1 = fig.add_subplot(111)
         unit = ""
 
         # make plot for each data file
+        loop = 0
+        chosen_file = ""
         for label, x, y in zip(legend_labels, x_data, y_data):
-            ax1.plot(x, y, '-', label=label)
+            if len(x_data) == 2 and loop == 0:
+                chosen_file = "b = "
+            elif len(x_data) == 2 and loop == 1:
+                chosen_file = "s = "
+            
+            ax1.plot(x, y, '-', label="{}{}".format(chosen_file, label))
             if signal_eff and t_cut_optimal != None:
                 ax1.axvline(x=t_cut_optimal, color='r', linestyle='--', label='T_cut Optimal ({}), with efficiency ({})'.format(t_cut_optimal, signal_eff))
                 ax2.plot(t_list, signal_list, 'g-')
+                loop += 1
         
         ax1.grid()
         ax1.set_title('{}'.format(plot_type))
@@ -667,7 +680,7 @@ def main():
 
     if plot_type == 'particle_properties':
         x_data, y_data, legend_labels, particle_name, prop_name = processed_file_to_data(file_list, selected_files, plot_type)
-        plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plot_type, None, None)
+        plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plot_type, None, None, None, None)
     elif plot_type in ['HT', 'meff', 'objects_per_event', 'electrons_muons_taus_per_event', 'largest_PT_in_event', 'delta_R_per_event']:
         x_data, y_data, legend_labels, particle_name, prop_name, signal_eff, t_cut_optimal, signal_list, t_list = processed_file_to_data(file_list, selected_files, plot_type)
         plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plot_type, signal_eff, t_cut_optimal, signal_list, t_list)
