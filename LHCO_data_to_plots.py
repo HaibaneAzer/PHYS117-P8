@@ -126,23 +126,27 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
 
         # make plot for each data file
         chosen_file = ""
-        for label, x, y in zip(legend_labels, x_data, y_data):
-            ax1.plot(x, y, '-', label="{}{}".format(chosen_file, label))
-            
+        colorlist = ["red", "blue"]
         if signal_eff and t_cut_optimal != None: 
             t_cut_idx = 0 
             for x_tcut_list, y_signal_list in zip(t_list, signal_list): 
                 loop = 0
                 for x, y in zip(x_data, y_data):
-                    if len(x_data) == 2 and loop == 0:
-                        chosen_file = "b = "
-                    elif len(x_data) == 2 and loop == 1:
-                        chosen_file = "s = "
                     if loop == 0:
-                        ax1.axvline(x=t_cut_optimal[t_cut_idx], color='r', linestyle='--', label='T_cut Optimal ({}), with efficiency ({})'.format(t_cut_optimal[t_cut_idx], signal_eff[t_cut_idx]))
+                        ax1.axvline(x=t_cut_optimal[t_cut_idx], linestyle='--', color=colorlist[t_cut_idx], label='T_cut Optimal ({}), with efficiency ({})'.format(t_cut_optimal[t_cut_idx], signal_eff[t_cut_idx]))
                     ax2.plot(x_tcut_list, y_signal_list)
                     loop += 1
                 t_cut_idx += 1
+        loop = 0
+        for label, x, y in zip(legend_labels, x_data, y_data):
+            if len(x_data) == 2 and loop == 0:
+                chosen_file = "first choice: "
+            elif len(x_data) == 2 and loop == 1:
+                chosen_file = "second choice: "
+            ax1.plot(x, y, '-', color=colorlist[loop], label="{}{}".format(chosen_file, label))
+            loop += 1
+            
+    
 
 
         ax1.grid()

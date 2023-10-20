@@ -188,20 +188,20 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     # pick t_cut
     for t_cut in range(t-1):
         if sum_direction == "1":
-            boxes_b = [(x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height for height in y_data_file1[:t_cut+1]]
+            boxes_b = [(1 - (x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height) for height in y_data_file1[t_cut:]]
             print(len(boxes_b), len(y_data_file1), len(x_data_file1))
-            epsilon_b = float(sum(boxes_b))
-            boxes_s = [(x_data_file2[t_cut+1] - x_data_file2[t_cut]) * height for height in y_data_file2[:t_cut+1]]
-            epsilon_s = float(sum(boxes_s))
-            
-        else:
-            boxes_b = [(x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height for height in y_data_file1[t_cut:]]
             epsilon_b = float(sum(boxes_b))
             boxes_s = [(x_data_file2[t_cut+1] - x_data_file2[t_cut]) * height for height in y_data_file2[t_cut:]]
             epsilon_s = float(sum(boxes_s))
+            
+        else:
+            boxes_b = [(1 - (x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height) for height in y_data_file1[:t_cut + 1]]
+            epsilon_b = float(sum(boxes_b))
+            boxes_s = [(x_data_file2[t_cut+1] - x_data_file2[t_cut]) * height for height in y_data_file2[:t_cut + 1]]
+            epsilon_s = float(sum(boxes_s))
         b = epsilon_b * N_b
         s = epsilon_s * N_s
-        current_signal_eff = (s / (s + b))
+        current_signal_eff = (s / np.sqrt(s + b))
         
         # get highest signal_eff method
         if signal_eff < current_signal_eff:
@@ -223,20 +223,20 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     optimal_t_cut = 0
     for t_cut in range(t-1):
         if sum_direction == "2":
-            boxes_s = [(x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height for height in y_data_file1[:t_cut+1]]
+            boxes_s = [(x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height for height in y_data_file1[t_cut:]]
             epsilon_s = float(sum(boxes_s))
-            boxes_b = [(x_data_file2[t_cut+1] - x_data_file2[t_cut]) * height for height in y_data_file2[:t_cut+1]]
+            boxes_b = [(1 - (x_data_file2[t_cut+1] - x_data_file2[t_cut]) * height) for height in y_data_file2[t_cut:]]
             epsilon_b = float(sum(boxes_b))
             
         else:
-            boxes_s = [(x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height for height in y_data_file1[t_cut:]]
+            boxes_s = [(x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height for height in y_data_file1[:t_cut + 1]]
             epsilon_s = float(sum(boxes_s))
-            boxes_b = [(x_data_file2[t_cut+1] - x_data_file2[t_cut]) * height for height in y_data_file2[t_cut:]]
+            boxes_b = [(1 - (x_data_file2[t_cut+1] - x_data_file2[t_cut]) * height) for height in y_data_file2[:t_cut + 1]]
             epsilon_b = float(sum(boxes_b))
 
         b = epsilon_b * N_b
         s = epsilon_s * N_s
-        current_signal_eff = (s / (s + b))
+        current_signal_eff = (s / np.sqrt(s + b))
         
         # get highest signal_eff method
         if signal_eff < current_signal_eff:
