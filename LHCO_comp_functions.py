@@ -88,18 +88,29 @@ def delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT):
     # difference in phi between such objects and met
 
     delta_phi_per_event = []
-
     for i in range(len(phi_met_per_event)):
-        delta_phi_value = abs(phi_per_event_L_PT[i] - phi_met_per_event[i])
+        phi_L = phi_per_event_L_PT[i]
+        phi_met = phi_met_per_event[i]
+        if phi_per_event_L_PT[i] < 0:
+            phi_L = phi_per_event_L_PT[i] + 2*np.pi
+        if phi_met_per_event[i] < 0:
+            phi_met = phi_met_per_event[i] + 2*np.pi
+        delta_phi_value = abs(phi_L - phi_met)
         delta_phi_per_event.append(delta_phi_value)
 
     return delta_phi_per_event
 
 def delta_eta_per_event(eta_met_per_event, eta_per_event_L_PT):
+    
     delta_eta_per_event = []
-
     for i in range(len(eta_met_per_event)):
-        delta_eta_value = abs(eta_per_event_L_PT[i] - eta_met_per_event[i])
+        eta_L = eta_per_event_L_PT[i]
+        eta_met = eta_met_per_event[i]
+        if eta_per_event_L_PT[i] < 0:
+            eta_L = eta_per_event_L_PT[i] + 2*np.pi
+        if eta_met_per_event[i] < 0:
+            eta_met = eta_met_per_event[i] + 2*np.pi
+        delta_eta_value = abs(eta_L - eta_met)
         delta_eta_per_event.append(delta_eta_value)
 
     return delta_eta_per_event
@@ -147,7 +158,23 @@ def delta_R_per_event(events, particle):
 
     return delta_R_per_event
 
-def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, num_events): # NB!: b = file1, s = file2
+def calculate_epsilon(x_data_1, y_data_1, x_data_2, y_data_2, t_cut, sum_direction):
+    if sum_direction == "1":
+        boxes_b = y_data_1[t_cut:]
+        epsilon_b = sum(boxes_b)
+        boxes_s = y_data_2[t_cut:]
+        epsilon_s = sum(boxes_s)
+        print(epsilon_s)
+        
+    else:
+        boxes_b = y_data_2[:t_cut + 1]
+        epsilon_b = sum(boxes_b)
+        boxes_s = y_data_1[:t_cut + 1]
+        epsilon_s = sum(boxes_s)
+
+    return epsilon_b, epsilon_s
+
+def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, num_events, pick_SE_formula): # NB!: b = file1, s = file2
     # f(x|H_0)_0 and f(x|H_1)_1
     # where x represents the value from x-axis (currently either meff or HT)
     # H_0 is rejected signal and H_1 is wanted signal (either sphaleron or BH, or opposite).
@@ -161,7 +188,7 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
 
     ### NB: s / (s + b) zero_to_tcut + b / (b + s) t_cut_to_end = 1 doesn't happen. s of file 1 =/= s of file 2?
 
-    t = min(len(x_data_file1), len(x_data_file2))
+    t = max(len(x_data_file1), len(x_data_file2))
     N_b = num_events[0] # (might change for actual event number)
     N_s = num_events[1]
     signal_eff = 0
@@ -169,13 +196,18 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     optimal_t_cut = 0
     optimal_t_list = []
     attempts = []
-    print("b (don't want):", x_data_file1)
-    print("s (want):", x_data_file2)
     # lists for plotting efficiency
     signal_efficiencies_list = []
     y_value_s_b_list = []
     x_values_list = []
     x_value_s_b_list = []
+    print("y_data1: ", y_data_file1)
+    print("y_data2: ", y_data_file2)
+    # turn y_data into pdfs
+    y_data_1_pdf = [float(y) / np.sum(y_data_file1) for y in y_data_file1]
+    y_data_2_pdf = [float(y) / np.sum(y_data_file2) for y in y_data_file2] 
+    print(y_data_1_pdf)
+    print(y_data_2_pdf)
     # choose summing direction
     sum_direction = None
     while sum_direction not in ['1', '2']:
@@ -187,22 +219,13 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
             print("Wrong value. Try again")
     # pick t_cut
     for t_cut in range(t-1):
-        if sum_direction == "1":
-            boxes_b = [(1 - (x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height) for height in y_data_file1[t_cut:]]
-            print(len(boxes_b), len(y_data_file1), len(x_data_file1))
-            epsilon_b = float(sum(boxes_b))
-            boxes_s = [(x_data_file2[t_cut+1] - x_data_file2[t_cut]) * height for height in y_data_file2[t_cut:]]
-            epsilon_s = float(sum(boxes_s))
-            
-        else:
-            boxes_b = [(1 - (x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height) for height in y_data_file1[:t_cut + 1]]
-            epsilon_b = float(sum(boxes_b))
-            boxes_s = [(x_data_file2[t_cut+1] - x_data_file2[t_cut]) * height for height in y_data_file2[:t_cut + 1]]
-            epsilon_s = float(sum(boxes_s))
+        epsilon_b, epsilon_s = calculate_epsilon(x_data_file1, y_data_1_pdf, x_data_file2, y_data_2_pdf, t_cut, sum_direction)
         b = epsilon_b * N_b
         s = epsilon_s * N_s
-        current_signal_eff = (s / np.sqrt(s + b))
-        
+        if pick_SE_formula:
+            current_signal_eff = (s / (s + b))
+        else:
+            current_signal_eff = (s / np.sqrt(s + b))
         # get highest signal_eff method
         if signal_eff < current_signal_eff:
             signal_eff = current_signal_eff
@@ -216,28 +239,29 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     x_value_s_b_list.append(x_values_list)
     signal_eff_list.append(signal_eff)
     optimal_t_list.append(optimal_t_cut)
-    # sum for opposite s and b
+
+
+    ###### sum for opposite s and b ######
+    # invert direction
+    if sum_direction == "1":
+        sum_direction = "2"
+    else: 
+        sum_direction = "1"
+
     signal_efficiencies_list = []
     x_values_list = []
     signal_eff = 0
     optimal_t_cut = 0
     for t_cut in range(t-1):
-        if sum_direction == "2":
-            boxes_s = [(x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height for height in y_data_file1[t_cut:]]
-            epsilon_s = float(sum(boxes_s))
-            boxes_b = [(1 - (x_data_file2[t_cut+1] - x_data_file2[t_cut]) * height) for height in y_data_file2[t_cut:]]
-            epsilon_b = float(sum(boxes_b))
-            
-        else:
-            boxes_s = [(x_data_file1[t_cut+1] - x_data_file1[t_cut]) * height for height in y_data_file1[:t_cut + 1]]
-            epsilon_s = float(sum(boxes_s))
-            boxes_b = [(1 - (x_data_file2[t_cut+1] - x_data_file2[t_cut]) * height) for height in y_data_file2[:t_cut + 1]]
-            epsilon_b = float(sum(boxes_b))
+        epsilon_b, epsilon_s = calculate_epsilon(x_data_file1, y_data_1_pdf, x_data_file2, y_data_2_pdf, t_cut, sum_direction)
 
         b = epsilon_b * N_b
         s = epsilon_s * N_s
-        current_signal_eff = (s / np.sqrt(s + b))
-        
+
+        if pick_SE_formula:
+            current_signal_eff = (s / (s + b))
+        else:
+            current_signal_eff = (s / np.sqrt(s + b))
         # get highest signal_eff method
         if signal_eff < current_signal_eff:
             signal_eff = current_signal_eff

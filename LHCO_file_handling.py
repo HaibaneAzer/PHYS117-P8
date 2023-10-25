@@ -3,6 +3,7 @@ from LHCO_reader import LHCO_reader
 import os
 import sys
 import numpy as np
+import matplotlib.pyplot as plt
 
 from LHCO_comp_functions import (
     calculate_HT_and_meff,
@@ -85,8 +86,8 @@ def processed_file_to_data(file_path_list, selected_files, plot_type):
     num_events_list = []
     signal_eff = None
     t_cut_optimal = None
-    signal_list = None
-    t_list = None
+    stat_and_phys_signal_list = []
+    stat_and_phys_t_list = []
 
     particle_name, prop_name = select_particle_and_property(plot_type)
     for idx in selected_files:
@@ -100,9 +101,13 @@ def processed_file_to_data(file_path_list, selected_files, plot_type):
                 legend_labels.append(file_name)
     # get signal efficiency if only 2 files and HT, meff data is analyzed
     if (len(selected_files) == 2) and (plot_type in ['HT', 'meff']):
-        signal_eff, t_cut_optimal, signal_list, t_list = signal_efficiency(x_data[0], y_data[0], x_data[1], y_data[1], num_events_list) # file 1, file 2
+        _, _, signal_list1, t_list1 = signal_efficiency(x_data[0], y_data[0], x_data[1], y_data[1], num_events_list, True) # file 1, file 2
+        signal_eff, t_cut_optimal, signal_list2, t_list2 = signal_efficiency(x_data[0], y_data[0], x_data[1], y_data[1], num_events_list, False)
 
-    return x_data, y_data, legend_labels, particle_name, prop_name, signal_eff, t_cut_optimal, signal_list, t_list
+        stat_and_phys_signal_list = [signal_list1, signal_list2]
+        stat_and_phys_t_list = [t_list1, t_list2]
+
+    return x_data, y_data, legend_labels, particle_name, prop_name, signal_eff, t_cut_optimal, stat_and_phys_signal_list, stat_and_phys_t_list
 
 
 ### main prompt selection functions ###
@@ -194,13 +199,13 @@ def process_selected_file(file_path):
 def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name):
     if plot_type == 'HT':
         HT_list, _ = calculate_HT_and_meff(events)
-        bincenters_HT, normalized_y_HT = data_to_bincenter_y_norm(HT_list, 50)
+        bincenters_HT, normalized_y_HT = data_to_bincenter_histogram(HT_list, 50)
 
         x_data.append(bincenters_HT)
         y_data.append(normalized_y_HT)
     elif plot_type == 'meff':
         _, meff_list = calculate_HT_and_meff(events)
-        bincenters_meff, normalized_y_meff = data_to_bincenter_y_norm(meff_list, 50)
+        bincenters_meff, normalized_y_meff = data_to_bincenter_histogram(meff_list, 50)
 
         x_data.append(bincenters_meff)
         y_data.append(normalized_y_meff)
@@ -244,7 +249,6 @@ def data_to_bincenter_y_norm(data, bins):
     y, binEdges = np.histogram(data, bins=bins)
     bincenters = 0.5*(binEdges[1:] + binEdges[:-1])
     y_norm = y / np.sum(data)
-    
     return bincenters, y_norm
 
 def data_to_bincenter_histogram(data, bins):
@@ -258,10 +262,11 @@ def data_to_bincenter_histogram(data, bins):
     Returns:
         tuple: Tuple containing bin centers and histogram values.
     """
-    bin_edges = np.linspace(min(data), max(data), bins+1)
-    hist, _ = np.histogram(data, bins=bin_edges, density=True)
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    return bin_centers, hist
+
+    y, binEdges = np.histogram(data, bins=bins)
+    bincenters = 0.5*(binEdges[1:] + binEdges[:-1])
+    
+    return bincenters, y
 
 def create_file_path_list(subdir_dict):
     file_path_list = []
