@@ -89,13 +89,11 @@ def delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT):
 
     delta_phi_per_event = []
     for i in range(len(phi_met_per_event)):
-        phi_L = phi_per_event_L_PT[i]
+        phi_L = phi_per_event_L_PT[i] # angles phi varies from -pi to pi
         phi_met = phi_met_per_event[i]
-        if phi_per_event_L_PT[i] < 0:
-            phi_L = phi_per_event_L_PT[i] + 2*np.pi
-        if phi_met_per_event[i] < 0:
-            phi_met = phi_met_per_event[i] + 2*np.pi
         delta_phi_value = abs(phi_L - phi_met)
+        if delta_phi_value > np.pi: # handle wrap around the circle
+            delta_phi_value = 2*np.pi - delta_phi_value
         delta_phi_per_event.append(delta_phi_value)
 
     return delta_phi_per_event
@@ -104,13 +102,11 @@ def delta_eta_per_event(eta_met_per_event, eta_per_event_L_PT):
     
     delta_eta_per_event = []
     for i in range(len(eta_met_per_event)):
-        eta_L = eta_per_event_L_PT[i]
+        eta_L = eta_per_event_L_PT[i] # angles eta varies from -pi to pi
         eta_met = eta_met_per_event[i]
-        if eta_per_event_L_PT[i] < 0:
-            eta_L = eta_per_event_L_PT[i] + 2*np.pi
-        if eta_met_per_event[i] < 0:
-            eta_met = eta_met_per_event[i] + 2*np.pi
         delta_eta_value = abs(eta_L - eta_met)
+        if delta_eta_value > np.pi: # handle wrap around the circle
+            delta_eta_value = 2*np.pi - delta_eta_value
         delta_eta_per_event.append(delta_eta_value)
 
     return delta_eta_per_event
