@@ -167,9 +167,9 @@ def calculate_epsilon(x_data_1, y_data_1, x_data_2, y_data_2, t_cut, sum_directi
         print(epsilon_s)
         
     else:
-        boxes_b = y_data_2[:t_cut + 1]
+        boxes_b = y_data_2[-(t_cut + 1):]
         epsilon_b = sum(boxes_b)
-        boxes_s = y_data_1[:t_cut + 1]
+        boxes_s = y_data_1[-(t_cut + 1):]
         epsilon_s = sum(boxes_s)
 
     return epsilon_b, epsilon_s
