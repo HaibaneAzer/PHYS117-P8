@@ -158,14 +158,13 @@ def calculate_epsilon(x_data_1, y_data_1, x_data_2, y_data_2, t_cut, sum_directi
     if sum_direction == "1":
         boxes_b = y_data_1[t_cut:]
         epsilon_b = sum(boxes_b)
-        boxes_s = y_data_2[t_cut:]
+        boxes_s = y_data_2[:t_cut]
         epsilon_s = sum(boxes_s)
-        print(epsilon_s)
         
     else:
-        boxes_b = y_data_2[-(t_cut + 1):]
+        boxes_b = y_data_2[:t_cut]
         epsilon_b = sum(boxes_b)
-        boxes_s = y_data_1[-(t_cut + 1):]
+        boxes_s = y_data_1[t_cut:]
         epsilon_s = sum(boxes_s)
 
     return epsilon_b, epsilon_s
