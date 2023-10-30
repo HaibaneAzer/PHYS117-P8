@@ -213,7 +213,7 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
         if sum_direction not in ['1', '2']:
             print("Wrong value. Try again")
     # pick t_cut
-    for t_cut in range(t-1):
+    """ for t_cut in range(t-1):
         epsilon_b, epsilon_s = calculate_epsilon(x_data_file1, y_data_1_pdf, x_data_file2, y_data_2_pdf, t_cut, sum_direction)
         b = epsilon_b * N_b
         s = epsilon_s * N_s
@@ -228,7 +228,25 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
             attempts.append(optimal_t_cut) # find when signal efficiency is last defined (aka. when max)
 
         signal_efficiencies_list.append(current_signal_eff)
-        x_values_list.append(x_data_file1[t_cut])
+        x_values_list.append(x_data_file1[t_cut]) """
+    for i, x in enumerate(x_data_file1):
+        print(i, x)
+    t_cut = int(raw_input("select t_cut"))
+    epsilon_b, epsilon_s = calculate_epsilon(x_data_file1, y_data_1_pdf, x_data_file2, y_data_2_pdf, t_cut, sum_direction)
+    b = epsilon_b * N_b
+    s = epsilon_s * N_s
+    if pick_SE_formula:
+        current_signal_eff = (s / (s + b))
+    else:
+        current_signal_eff = (s / np.sqrt(s + b))
+    # get highest signal_eff method
+    if signal_eff < current_signal_eff:
+        signal_eff = current_signal_eff
+        optimal_t_cut = x_data_file1[t_cut]
+        attempts.append(optimal_t_cut) # find when signal efficiency is last defined (aka. when max)
+
+    signal_efficiencies_list.append(current_signal_eff)
+    x_values_list.append(x_data_file1[t_cut])
 
     y_value_s_b_list.append(signal_efficiencies_list)
     x_value_s_b_list.append(x_values_list)
@@ -247,7 +265,7 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     x_values_list = []
     signal_eff = 0
     optimal_t_cut = 0
-    for t_cut in range(t-1):
+    """ for t_cut in range(t-1):
         epsilon_b, epsilon_s = calculate_epsilon(x_data_file1, y_data_1_pdf, x_data_file2, y_data_2_pdf, t_cut, sum_direction)
 
         b = epsilon_b * N_b
@@ -264,8 +282,28 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
             attempts.append(optimal_t_cut) # find when signal efficiency is last defined (aka. when max)
 
         signal_efficiencies_list.append(current_signal_eff)
-        x_values_list.append(x_data_file1[t_cut])
-    
+        x_values_list.append(x_data_file1[t_cut]) """
+    #######
+    for i, x in enumerate(x_data_file1):
+        print(i, x)
+    t_cut = int(raw_input("select t_cut"))
+    epsilon_b, epsilon_s = calculate_epsilon(x_data_file1, y_data_1_pdf, x_data_file2, y_data_2_pdf, t_cut, sum_direction)
+    b = epsilon_b * N_b
+    s = epsilon_s * N_s
+    if pick_SE_formula:
+        current_signal_eff = (s / (s + b))
+    else:
+        current_signal_eff = (s / np.sqrt(s + b))
+    # get highest signal_eff method
+    if signal_eff < current_signal_eff:
+        signal_eff = current_signal_eff
+        optimal_t_cut = x_data_file1[t_cut]
+        attempts.append(optimal_t_cut) # find when signal efficiency is last defined (aka. when max)
+
+    signal_efficiencies_list.append(current_signal_eff)
+    x_values_list.append(x_data_file1[t_cut])
+    #######
+
     y_value_s_b_list.append(signal_efficiencies_list)
     x_value_s_b_list.append(x_values_list)
     signal_eff_list.append(signal_eff)
