@@ -101,13 +101,13 @@ def processed_file_to_data(file_path_list, selected_files, plot_type):
                 legend_labels.append(file_name)
     # get signal efficiency if only 2 files and HT, meff data is analyzed
     if (len(selected_files) == 2) and (plot_type in ['HT', 'meff']):
-        _, _, signal_list1, t_list1 = signal_efficiency(x_data[0], y_data[0], x_data[1], y_data[1], num_events_list, True) # file 1, file 2
-        signal_eff, t_cut_optimal, signal_list2, t_list2 = signal_efficiency(x_data[0], y_data[0], x_data[1], y_data[1], num_events_list, False)
+        
+        signal_eff, t_cut_optimal, _, _ = signal_efficiency(x_data[0], y_data[0], x_data[1], y_data[1], num_events_list)
 
-        stat_and_phys_signal_list = [signal_list1, signal_list2]
-        stat_and_phys_t_list = [t_list1, t_list2]
+        """ stat_and_phys_signal_list = [signal_list1, signal_list2]
+        stat_and_phys_t_list = [t_list1, t_list2] """
 
-    return x_data, y_data, legend_labels, particle_name, prop_name, signal_eff, t_cut_optimal, stat_and_phys_signal_list, stat_and_phys_t_list
+    return x_data, y_data, legend_labels, particle_name, prop_name, signal_eff, t_cut_optimal
 
 
 ### main prompt selection functions ###
@@ -199,16 +199,16 @@ def process_selected_file(file_path):
 def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name):
     if plot_type == 'HT':
         HT_list, _ = calculate_HT_and_meff(events)
-        bincenters_HT, normalized_y_HT = data_to_bincenter_histogram(HT_list, 50)
+        bincenters_HT, y_HT = data_to_bincenter_histogram(HT_list, 50)
 
         x_data.append(bincenters_HT)
-        y_data.append(normalized_y_HT)
+        y_data.append(y_HT)
     elif plot_type == 'meff':
         _, meff_list = calculate_HT_and_meff(events)
-        bincenters_meff, normalized_y_meff = data_to_bincenter_histogram(meff_list, 50)
+        bincenters_meff, y_meff = data_to_bincenter_histogram(meff_list, 50)
 
         x_data.append(bincenters_meff)
-        y_data.append(normalized_y_meff)
+        y_data.append(y_meff)
     elif plot_type == 'objects_per_event':
         obj_per_event_data = objects_per_event(events)
 

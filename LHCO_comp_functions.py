@@ -169,7 +169,7 @@ def calculate_epsilon(x_data_1, y_data_1, x_data_2, y_data_2, t_cut, sum_directi
 
     return epsilon_b, epsilon_s
 
-def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, num_events, pick_SE_formula): # NB!: b = file1, s = file2
+def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, num_events): # NB!: b = file1, s = file2
     # f(x|H_0)_0 and f(x|H_1)_1
     # where x represents the value from x-axis (currently either meff or HT)
     # H_0 is rejected signal and H_1 is wanted signal (either sphaleron or BH, or opposite).
@@ -190,8 +190,7 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     signal_eff_list = []
     optimal_t_cut = 0
     optimal_t_list = []
-    attempts = []
-    # lists for plotting efficiency
+    # lists for plotting significance
     signal_efficiencies_list = []
     y_value_s_b_list = []
     x_values_list = []
@@ -213,37 +212,33 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
         if sum_direction not in ['1', '2']:
             print("Wrong value. Try again")
     # pick t_cut
-    """ for t_cut in range(t-1):
-        epsilon_b, epsilon_s = calculate_epsilon(x_data_file1, y_data_1_pdf, x_data_file2, y_data_2_pdf, t_cut, sum_direction)
-        b = epsilon_b * N_b
-        s = epsilon_s * N_s
-        if pick_SE_formula:
-            current_signal_eff = (s / (s + b))
-        else:
-            current_signal_eff = (s / np.sqrt(s + b))
-        # get highest signal_eff method
-        if signal_eff < current_signal_eff:
-            signal_eff = current_signal_eff
-            optimal_t_cut = x_data_file1[t_cut]
-            attempts.append(optimal_t_cut) # find when signal efficiency is last defined (aka. when max)
-
-        signal_efficiencies_list.append(current_signal_eff)
-        x_values_list.append(x_data_file1[t_cut]) """
+    
     for i, x in enumerate(x_data_file1):
         print(i, x)
-    t_cut = int(raw_input("select t_cut"))
+    t_cut = int(raw_input("select t_cut: "))
+    # sum all events from selected direction to t_cut
+    ### NB: Choose blackhole file as first!!!
+    if sum_direction == "1":
+        blackhole_events1_a = sum(y_data_file1[:t_cut])
+        sphaleron_events1_a = sum(y_data_file2[:t_cut])
+        blackhole_events1_r = sum(y_data_file1[t_cut:])
+        sphaleron_events1_r = sum(y_data_file2[t_cut:])
+    else:
+        blackhole_events1_a = sum(y_data_file1[t_cut:])
+        sphaleron_events1_a = sum(y_data_file2[t_cut:])
+        blackhole_events1_r = sum(y_data_file1[:t_cut])
+        sphaleron_events1_r = sum(y_data_file2[:t_cut])
+
+    #
     epsilon_b, epsilon_s = calculate_epsilon(x_data_file1, y_data_1_pdf, x_data_file2, y_data_2_pdf, t_cut, sum_direction)
     b = epsilon_b * N_b
     s = epsilon_s * N_s
-    if pick_SE_formula:
-        current_signal_eff = (s / (s + b))
-    else:
-        current_signal_eff = (s / np.sqrt(s + b))
+    
+    current_signal_eff = (s / np.sqrt(s + b))
     # get highest signal_eff method
     if signal_eff < current_signal_eff:
         signal_eff = current_signal_eff
         optimal_t_cut = x_data_file1[t_cut]
-        attempts.append(optimal_t_cut) # find when signal efficiency is last defined (aka. when max)
 
     signal_efficiencies_list.append(current_signal_eff)
     x_values_list.append(x_data_file1[t_cut])
@@ -265,40 +260,32 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     x_values_list = []
     signal_eff = 0
     optimal_t_cut = 0
-    """ for t_cut in range(t-1):
-        epsilon_b, epsilon_s = calculate_epsilon(x_data_file1, y_data_1_pdf, x_data_file2, y_data_2_pdf, t_cut, sum_direction)
-
-        b = epsilon_b * N_b
-        s = epsilon_s * N_s
-
-        if pick_SE_formula:
-            current_signal_eff = (s / (s + b))
-        else:
-            current_signal_eff = (s / np.sqrt(s + b))
-        # get highest signal_eff method
-        if signal_eff < current_signal_eff:
-            signal_eff = current_signal_eff
-            optimal_t_cut = x_data_file1[t_cut]
-            attempts.append(optimal_t_cut) # find when signal efficiency is last defined (aka. when max)
-
-        signal_efficiencies_list.append(current_signal_eff)
-        x_values_list.append(x_data_file1[t_cut]) """
-    #######
+    
     for i, x in enumerate(x_data_file1):
         print(i, x)
-    t_cut = int(raw_input("select t_cut"))
+    t_cut = int(raw_input("select t_cut: "))
+    # sum all events from selected direction to t_cut
+    if sum_direction == "1":
+        blackhole_events2_a = sum(y_data_file1[:t_cut])
+        sphaleron_events2_a = sum(y_data_file2[:t_cut])
+        blackhole_events2_r = sum(y_data_file1[t_cut:])
+        sphaleron_events2_r = sum(y_data_file2[t_cut:])
+    else:
+        blackhole_events2_a = sum(y_data_file1[t_cut:])
+        sphaleron_events2_a = sum(y_data_file2[t_cut:])
+        blackhole_events2_r = sum(y_data_file1[:t_cut])
+        sphaleron_events2_r = sum(y_data_file2[:t_cut])
+
+    #
     epsilon_b, epsilon_s = calculate_epsilon(x_data_file1, y_data_1_pdf, x_data_file2, y_data_2_pdf, t_cut, sum_direction)
     b = epsilon_b * N_b
     s = epsilon_s * N_s
-    if pick_SE_formula:
-        current_signal_eff = (s / (s + b))
-    else:
-        current_signal_eff = (s / np.sqrt(s + b))
+    
+    current_signal_eff = (s / np.sqrt(s + b))
     # get highest signal_eff method
     if signal_eff < current_signal_eff:
         signal_eff = current_signal_eff
         optimal_t_cut = x_data_file1[t_cut]
-        attempts.append(optimal_t_cut) # find when signal efficiency is last defined (aka. when max)
 
     signal_efficiencies_list.append(current_signal_eff)
     x_values_list.append(x_data_file1[t_cut])
@@ -312,6 +299,7 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     print(optimal_t_list)
 
     print("Signal efficiency given t_cut: {}".format(optimal_t_cut))
-    print("all attempts:", attempts)
+    print("S/B accept: {} / {}".format(sphaleron_events1_a + sphaleron_events2_a, blackhole_events1_a + blackhole_events2_a))
+    print("S/B reject: {} / {}".format(sphaleron_events1_r + sphaleron_events2_r, blackhole_events1_r + blackhole_events2_r))
     print("Signal_eff =", signal_eff)
     return signal_eff_list, optimal_t_list, y_value_s_b_list, x_value_s_b_list

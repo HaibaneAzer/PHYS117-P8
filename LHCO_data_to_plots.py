@@ -3,7 +3,7 @@ import os
 
 
 ### main plotting functions ###
-def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plot_type, signal_eff, t_cut_optimal, signal_list, t_list):
+def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plot_type, signal_eff, t_cut_optimal):
     """
     plot all data into one line plot 
 
@@ -117,12 +117,7 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
 
     elif plot_type in ['HT', 'meff']:
         fig = plt.figure()
-        if signal_eff and t_cut_optimal != None:
-            ax1 = fig.add_subplot(311)
-            ax2 = fig.add_subplot(312)
-            ax3 = fig.add_subplot(313)
-        else:
-            ax1 = fig.add_subplot(111)
+        ax1 = fig.add_subplot(111)
         unit = ""
 
         # make plot for each data file
@@ -130,16 +125,11 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
         colorlist = ["red", "blue"]
         if signal_eff and t_cut_optimal != None: 
             t_cut_idx = 0 
-            for x_tcut_list_0, x_tcut_list_1, y_signal_list_0, y_signal_list_1 in zip(t_list[0], t_list[1], signal_list[0], signal_list[1]): 
-                loop = 0
-                for x, y in zip(x_data, y_data):
-                    if loop == 0:
-                        ax1.axvline(x=t_cut_optimal[t_cut_idx], linestyle='--', color=colorlist[t_cut_idx], label='T_cut Optimal ({}), with efficiency ({})'.format(t_cut_optimal[t_cut_idx], signal_eff[t_cut_idx]))
-                   
-                    ax2.plot(x_tcut_list_0, y_signal_list_0)
-                    ax3.plot(x_tcut_list_1, y_signal_list_1)
-                    loop += 1
+            for x, y in zip(x_data, y_data):
+             
+                ax1.axvline(x=t_cut_optimal[t_cut_idx], linestyle='--', color=colorlist[t_cut_idx], label='T_cut Optimal ({}), with Significance ({})'.format(t_cut_optimal[t_cut_idx], signal_eff[t_cut_idx]))
                 t_cut_idx += 1
+
         loop = 0
         # make plot of Ht/meff
         for label, x, y in zip(legend_labels, x_data, y_data):
@@ -150,22 +140,11 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
             ax1.plot(x, y, '-', color=colorlist[loop], label="{}{}".format(chosen_file, label))
             loop += 1
             
-    
-
-
         ax1.grid()
         ax1.set_title('{}'.format(plot_type))
         ax1.set_ylabel('Relative Frequency')
         ax1.legend()
 
-        if signal_eff and t_cut_optimal != None:
-            ax2.grid()
-            ax3.grid()
-            ax3.set_xlabel("PT (GeV)")  # Use the same x-axis label as the main plot
-            ax2.set_ylabel('Relative signal')
-            ax3.set_ylabel("Frequency signal")
-            ax2.legend()
-            ax3.legend()
     else: # all other plot types as line graph
         fig = plt.figure()
         ax = fig.add_subplot(111)
