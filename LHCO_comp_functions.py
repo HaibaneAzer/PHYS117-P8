@@ -299,7 +299,12 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     print(optimal_t_list)
 
     print("Signal efficiency given t_cut: {}".format(optimal_t_cut))
-    print("S/B accept: {} / {}".format(sphaleron_events1_a + sphaleron_events2_a, blackhole_events1_a + blackhole_events2_a))
-    print("S/B reject: {} / {}".format(sphaleron_events1_r + sphaleron_events2_r, blackhole_events1_r + blackhole_events2_r))
+    sphaleron_accept = sphaleron_events1_a + sphaleron_events2_a
+    sphaleron_reject = sphaleron_events1_r + sphaleron_events2_r
+    blackhole_accept = blackhole_events1_a + blackhole_events2_a
+    blackhole_reject = blackhole_events1_r + blackhole_events2_r
+    print(" S/B accept: {} / {}".format(sphaleron_accept, blackhole_accept))
+    print(" S/B reject: {} / {}".format(sphaleron_reject, blackhole_reject))
+    print(" S/B total: {} / {}".format(sphaleron_accept + sphaleron_reject, blackhole_accept + blackhole_reject))
     print("Signal_eff =", signal_eff)
     return signal_eff_list, optimal_t_list, y_value_s_b_list, x_value_s_b_list
