@@ -184,6 +184,8 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     ### NB: s / (s + b) zero_to_tcut + b / (b + s) t_cut_to_end = 1 doesn't happen. s of file 1 =/= s of file 2?
 
     t = max(len(x_data_file1), len(x_data_file2))
+    t_cut1 = 0
+    t_cut2 = 0
     N_b = num_events[0] # (might change for actual event number)
     N_s = num_events[1]
     signal_eff = 0
@@ -216,18 +218,19 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     for i, x in enumerate(x_data_file1):
         print(i, x)
     t_cut = int(raw_input("select t_cut: "))
+    t_cut1 = t_cut
     # sum all events from selected direction to t_cut
     ### NB: Choose blackhole file as first!!!
     if sum_direction == "1":
         blackhole_events1_a = sum(y_data_file1[:t_cut])
-        sphaleron_events1_a = sum(y_data_file2[:t_cut])
+        sphaleron_events1_a = sum(y_data_file2[t_cut:])
         blackhole_events1_r = sum(y_data_file1[t_cut:])
-        sphaleron_events1_r = sum(y_data_file2[t_cut:])
+        sphaleron_events1_r = sum(y_data_file2[:t_cut])
     else:
         blackhole_events1_a = sum(y_data_file1[t_cut:])
-        sphaleron_events1_a = sum(y_data_file2[t_cut:])
+        sphaleron_events1_a = sum(y_data_file2[:t_cut])
         blackhole_events1_r = sum(y_data_file1[:t_cut])
-        sphaleron_events1_r = sum(y_data_file2[:t_cut])
+        sphaleron_events1_r = sum(y_data_file2[t_cut:])
 
     #
     epsilon_b, epsilon_s = calculate_epsilon(x_data_file1, y_data_1_pdf, x_data_file2, y_data_2_pdf, t_cut, sum_direction)
@@ -264,17 +267,18 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     for i, x in enumerate(x_data_file1):
         print(i, x)
     t_cut = int(raw_input("select t_cut: "))
+    t_cut2 = t_cut
     # sum all events from selected direction to t_cut
-    if sum_direction == "1":
+    if sum_direction == "2":
         blackhole_events2_a = sum(y_data_file1[:t_cut])
-        sphaleron_events2_a = sum(y_data_file2[:t_cut])
+        sphaleron_events2_a = sum(y_data_file2[t_cut:])
         blackhole_events2_r = sum(y_data_file1[t_cut:])
-        sphaleron_events2_r = sum(y_data_file2[t_cut:])
+        sphaleron_events2_r = sum(y_data_file2[:t_cut])
     else:
         blackhole_events2_a = sum(y_data_file1[t_cut:])
-        sphaleron_events2_a = sum(y_data_file2[t_cut:])
+        sphaleron_events2_a = sum(y_data_file2[:t_cut])
         blackhole_events2_r = sum(y_data_file1[:t_cut])
-        sphaleron_events2_r = sum(y_data_file2[:t_cut])
+        sphaleron_events2_r = sum(y_data_file2[t_cut:])
 
     #
     epsilon_b, epsilon_s = calculate_epsilon(x_data_file1, y_data_1_pdf, x_data_file2, y_data_2_pdf, t_cut, sum_direction)
@@ -299,12 +303,16 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     print(optimal_t_list)
 
     print("Signal efficiency given t_cut: {}".format(optimal_t_cut))
-    sphaleron_accept = sphaleron_events1_a + sphaleron_events2_a
-    sphaleron_reject = sphaleron_events1_r + sphaleron_events2_r
-    blackhole_accept = blackhole_events1_a + blackhole_events2_a
-    blackhole_reject = blackhole_events1_r + blackhole_events2_r
-    print(" S/B accept: {} / {}".format(sphaleron_accept, blackhole_accept))
-    print(" S/B reject: {} / {}".format(sphaleron_reject, blackhole_reject))
-    print(" S/B total: {} / {}".format(sphaleron_accept + sphaleron_reject, blackhole_accept + blackhole_reject))
+    
+    print(" t_cut 1:")
+    print(" S/B accept: {} / {}".format(blackhole_events1_a, sphaleron_events1_r))
+    print(" S/B reject: {} / {}".format(sphaleron_events1_a, blackhole_events1_r))
+    print(" S/B total: {} / {}".format(sphaleron_events1_a + sphaleron_events1_r, blackhole_events1_a + blackhole_events1_r))
+    print(" uncertainty of t_cut 1 based on 3 bins from chosen cut: {} +- {}".format(x_data_file1[t_cut1], abs(x_data_file1[t_cut1] - x_data_file1[t_cut1 + 3])))
+    print(" t_cut 2:")
+    print(" S/B accept: {} / {}".format(blackhole_events2_a, sphaleron_events2_r))
+    print(" S/B reject: {} / {}".format(sphaleron_events2_a, blackhole_events2_r))
+    print(" S/B total: {} / {}".format(sphaleron_events2_a + sphaleron_events2_r, blackhole_events2_a + blackhole_events2_r))
+    print(" uncertainty of t_cut2 based on 3 bins from chosen cut: {} +- {}".format(x_data_file1[t_cut2], abs(x_data_file1[t_cut2] - x_data_file1[t_cut2 + 3])))
     print("Signal_eff =", signal_eff)
     return signal_eff_list, optimal_t_list, y_value_s_b_list, x_value_s_b_list
