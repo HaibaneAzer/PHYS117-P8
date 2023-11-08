@@ -169,7 +169,7 @@ def calculate_epsilon(x_data_1, y_data_1, x_data_2, y_data_2, t_cut, sum_directi
 
     return epsilon_b, epsilon_s
 
-def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, num_events): # NB!: b = file1, s = file2
+def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, num_events): # NB!: bh = file1, sph = file2
     # f(x|H_0)_0 and f(x|H_1)_1
     # where x represents the value from x-axis (currently either meff or HT)
     # H_0 is rejected signal and H_1 is wanted signal (either sphaleron or BH, or opposite).
@@ -186,7 +186,7 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     t = max(len(x_data_file1), len(x_data_file2))
     t_cut1 = 0
     t_cut2 = 0
-    N_b = num_events[0] # (might change for actual event number)
+    N_b = num_events[0]
     N_s = num_events[1]
     signal_eff = 0
     signal_eff_list = []
@@ -270,16 +270,15 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     t_cut2 = t_cut
     # sum all events from selected direction to t_cut
     if sum_direction == "2":
-        blackhole_events2_a = sum(y_data_file1[:t_cut])
-        sphaleron_events2_a = sum(y_data_file2[t_cut:])
-        blackhole_events2_r = sum(y_data_file1[t_cut:])
-        sphaleron_events2_r = sum(y_data_file2[:t_cut])
-    else:
         blackhole_events2_a = sum(y_data_file1[t_cut:])
         sphaleron_events2_a = sum(y_data_file2[:t_cut])
         blackhole_events2_r = sum(y_data_file1[:t_cut])
         sphaleron_events2_r = sum(y_data_file2[t_cut:])
-
+    else:
+        blackhole_events2_a = sum(y_data_file1[:t_cut])
+        sphaleron_events2_a = sum(y_data_file2[t_cut:])
+        blackhole_events2_r = sum(y_data_file1[t_cut:])
+        sphaleron_events2_r = sum(y_data_file2[:t_cut])
     #
     epsilon_b, epsilon_s = calculate_epsilon(x_data_file1, y_data_1_pdf, x_data_file2, y_data_2_pdf, t_cut, sum_direction)
     b = epsilon_b * N_b

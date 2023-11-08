@@ -86,26 +86,36 @@ def processed_file_to_data(file_path_list, selected_files, plot_type):
     num_events_list = []
     signal_eff = None
     t_cut_optimal = None
-    stat_and_phys_signal_list = []
-    stat_and_phys_t_list = []
 
     particle_name, prop_name = select_particle_and_property(plot_type)
-    for idx in selected_files:
-        if 0 <= idx < len(file_path_list):
-            file_name = file_path_list[idx]
-            events = process_selected_file(file_name)
-            num_events_list.append(len(events))
-
-            if events is not None:
-                x_data, y_data = process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name)
-                legend_labels.append(file_name)
-    # get signal efficiency if only 2 files and HT, meff data is analyzed
     if (len(selected_files) == 2) and (plot_type in ['HT', 'meff']):
-        
-        signal_eff, t_cut_optimal, _, _ = signal_efficiency(x_data[0], y_data[0], x_data[1], y_data[1], num_events_list)
+        file_name1 = file_path_list[selected_files[0]]
+        events1 = process_selected_file(file_name1)
+        num_events_list.append(len(events1))
+        file_name2 = file_path_list[selected_files[1]]
+        events2 = process_selected_file(file_name2)
+        num_events_list.append(len(events2))
 
-        """ stat_and_phys_signal_list = [signal_list1, signal_list2]
-        stat_and_phys_t_list = [t_list1, t_list2] """
+        events = [events1, events2]
+
+        if events is not None:
+            x_data, y_data = process_data_for_plot_comparison(events, x_data, y_data, plot_type)
+            print(x_data, y_data)
+            legend_labels.append(file_name1)
+            legend_labels.append(file_name2)
+            
+        signal_eff, t_cut_optimal, _, _ = signal_efficiency(x_data[0], y_data[0], x_data[1], y_data[1], num_events_list)
+    else:
+        for idx in selected_files:
+            if 0 <= idx < len(file_path_list):
+                file_name = file_path_list[idx]
+                events = process_selected_file(file_name)
+                num_events_list.append(len(events))
+
+                if events is not None:
+                    x_data, y_data = process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name, False)
+                    legend_labels.append(file_name)
+    # get signal efficiency if only 2 files and HT, meff data is analyzed
 
     return x_data, y_data, legend_labels, particle_name, prop_name, signal_eff, t_cut_optimal
 
@@ -195,7 +205,30 @@ def process_selected_file(file_path):
         return events
     else:
         return None
-    
+
+def process_data_for_plot_comparison(events, x_data, y_data, plot_type):
+    if plot_type == 'HT':
+        HT_list1, _ = calculate_HT_and_meff(events[0])
+        HT_list2, _ = calculate_HT_and_meff(events[1])
+
+        bincenters_HT, y_HT1, y_HT2 = data_to_equal_binwidth_histogram(HT_list1, HT_list2)
+
+        x_data.append(bincenters_HT)
+        x_data.append(bincenters_HT)
+        y_data.append(y_HT1)
+        y_data.append(y_HT2)
+    elif plot_type == 'meff':
+        _, meff_list1 = calculate_HT_and_meff(events[0])
+        _, meff_list2 = calculate_HT_and_meff(events[1])
+
+        bincenters_meff, y_meff1, y_meff2 = data_to_equal_binwidth_histogram(meff_list1, meff_list2)
+
+        x_data.append(bincenters_meff)
+        x_data.append(bincenters_meff)
+        y_data.append(y_meff1)
+        y_data.append(y_meff2)
+    return x_data, y_data
+
 def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name):
     if plot_type == 'HT':
         HT_list, _ = calculate_HT_and_meff(events)
@@ -250,6 +283,38 @@ def data_to_bincenter_y_norm(data, bins):
     bincenters = 0.5*(binEdges[1:] + binEdges[:-1])
     y_norm = y / np.sum(data)
     return bincenters, y_norm
+
+def data_to_equal_binwidth_histogram(data1, data2):
+    # gives same binwidth for both files, with range adjusted to 
+    # be equal for both.
+    # Determine the larger range
+    min_val = min(np.min(data1), np.min(data2))
+    max_val = max(np.max(data1), np.max(data2))
+    max_range = max_val - min_val
+    # Define the bin width
+    bin_num = 50 # NB! find better way to set this value. 50 bins is prefered.
+
+    bin_width = max_range/bin_num
+
+    # Create the bins
+    bins = np.arange(min_val, max_val + bin_width, bin_width)
+
+    # Compute the histograms
+    hist1, _ = np.histogram(data1, bins=bins)
+    hist2, _ = np.histogram(data2, bins=bins)
+
+    # Add zero values to the smaller x_data/y_data
+    if len(hist1) > len(hist2):
+        hist2 = np.concatenate((hist2, np.zeros(len(hist1) - len(hist2))))
+    else:
+        hist1 = np.concatenate((hist1, np.zeros(len(hist2) - len(hist1))))
+
+    # Extract x_data and y_data
+    bincenters = 0.5*(bins[1:] + bins[:-1])
+    y1 = hist1
+    y2 = hist2
+
+    return bincenters, y1, y2
 
 def data_to_bincenter_histogram(data, bins):
     """
