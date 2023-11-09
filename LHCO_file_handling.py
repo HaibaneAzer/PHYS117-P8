@@ -113,7 +113,7 @@ def processed_file_to_data(file_path_list, selected_files, plot_type):
                 num_events_list.append(len(events))
 
                 if events is not None:
-                    x_data, y_data = process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name, False)
+                    x_data, y_data = process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name)
                     legend_labels.append(file_name)
     # get signal efficiency if only 2 files and HT, meff data is analyzed
 
