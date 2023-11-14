@@ -260,6 +260,8 @@ def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop
         y_data.append([electrons, muons, taus])
     elif plot_type == 'largest_PT_in_event':
         largest_PT, delta_phi = largest_PT_in_event(events)
+        bincenters_PT, y_PT = data_to_bincenter_histogram(largest_PT, 50)
+        bincenters_phi, y_phi = data_to_bincenter_histogram(delta_phi, 50)
         
         # Divide the events into bins
         bin_size = len(largest_PT) // 100
@@ -267,8 +269,8 @@ def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop
         binned_PT = [np.mean(largest_PT[i:i+bin_size]) for i in binned_events]
         binned_phi = [np.mean(delta_phi[i:i+bin_size]) for i in binned_events]
 
-        x_data.append([binned_events, binned_events])
-        y_data.append([binned_PT, binned_phi])
+        x_data.append([bincenters_PT, bincenters_phi])
+        y_data.append([y_PT, y_phi])
     elif plot_type == 'delta_R_per_event':
         delta_R = delta_R_per_event(events, particle_name)
          # Divide the events into bins

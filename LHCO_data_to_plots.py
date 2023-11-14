@@ -69,13 +69,13 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
             ax2.plot(x_phi, y_phi, '-', label=label)
         
         ax1.grid()
-        ax1.set_xlabel('Events')
-        ax1.set_ylabel('Largest PT (GeV)')
+        ax1.set_xlabel('Largest PT [GeV]')
+        ax1.set_ylabel("Relative Frequency")
         ax1.legend()
 
         ax2.grid()
-        ax2.set_xlabel('Event')
-        ax2.set_ylabel('Delta Phi (angle)')
+        ax2.set_xlabel('Delta Phi []')
+        ax2.set_ylabel("Relative Frequency")
         ax2.legend()
 
         plt.tight_layout()
@@ -127,22 +127,28 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
             t_cut_idx = 0 
             for x, y in zip(x_data, y_data):
              
-                ax1.axvline(x=t_cut_optimal[t_cut_idx], linestyle='--', color=colorlist[t_cut_idx], label='T_cut Optimal ({}), with Significance ({})'.format(t_cut_optimal[t_cut_idx], signal_eff[t_cut_idx]))
+                ax1.axvline(x=t_cut_optimal[t_cut_idx], linestyle='--', color=colorlist[t_cut_idx], label='T_cut ({}), with Significance ({})'.format(t_cut_optimal[t_cut_idx], signal_eff[t_cut_idx]))
                 t_cut_idx += 1
 
-        loop = 0
-        # make plot of Ht/meff
-        for label, x, y in zip(legend_labels, x_data, y_data):
-            if len(x_data) == 2 and loop == 0:
-                chosen_file = "first choice: "
-            elif len(x_data) == 2 and loop == 1:
-                chosen_file = "second choice: "
-            ax1.plot(x, y, '-', color=colorlist[loop], label="{}{}".format(chosen_file, label))
-            loop += 1
+    
+            loop = 0
+            # make plot of Ht/meff
+            for label, x, y in zip(legend_labels, x_data, y_data):
+                if loop == 0:
+                    chosen_file = "blackhole: "
+                elif loop == 1:
+                    chosen_file = "sphaleron: "
+                ax1.plot(x, y, '-', color=colorlist[loop], label="{}{}".format(chosen_file, label))
+                loop += 1
+        else: 
+            # make plot of Ht/meff
+            for label, x, y in zip(legend_labels, x_data, y_data):
+                ax1.plot(x, y, '-', label="{}".format(label))
             
         ax1.grid()
         ax1.set_title('{}'.format(plot_type))
         ax1.set_ylabel('Relative Frequency')
+        ax1.set_xlabel("{} [GeV]".format(plot_type))
         ax1.legend()
 
     else: # all other plot types as line graph
