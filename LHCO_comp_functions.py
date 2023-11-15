@@ -154,56 +154,50 @@ def delta_R_per_event(events, particle):
 
     return delta_R_per_event
 
-def calculate_epsilon(y_data_1, y_data_2, t_cut, sum_direction):
-    if sum_direction == "1":
-        boxes_b = y_data_1[t_cut:]
-        epsilon_b = sum(boxes_b)
-        boxes_s = y_data_2[:t_cut]
-        epsilon_s = sum(boxes_s)
-        
-    else:
-        boxes_b = y_data_2[:t_cut]
-        epsilon_b = sum(boxes_b)
-        boxes_s = y_data_1[t_cut:]
-        epsilon_s = sum(boxes_s)
 
-    return epsilon_b, epsilon_s
+##############################################################################################
+
+
+def calculate_epsilon(y_data_file1, y_data_file2, t_cut, sum_direction):
+    if sum_direction == "1": # default from left side
+        blackhole_events_a = sum(y_data_file1[:t_cut])
+        sphaleron_events_a = sum(y_data_file2[t_cut:])
+        blackhole_events_r = sum(y_data_file1[t_cut:])
+        sphaleron_events_r = sum(y_data_file2[:t_cut])
+    else:
+        blackhole_events_a = sum(y_data_file1[t_cut:])
+        sphaleron_events_a = sum(y_data_file2[:t_cut])
+        blackhole_events_r = sum(y_data_file1[:t_cut])
+        sphaleron_events_r = sum(y_data_file2[t_cut:])
+
+    return blackhole_events_a, sphaleron_events_a, blackhole_events_r, sphaleron_events_r
+
+def make_signal_efficiency_significance_list(t_max, y_data1, y_data2, sum_direction, sph_is_accept = True):
+    signal_efficiency_list = []
+    signal_significance_list = []
+    for t_cut in range(t_max):
+        if sph_is_accept:
+            s, _, _, b = calculate_epsilon(y_data1, y_data2, t_cut, sum_direction)
+        else:
+            b, _, _, s = calculate_epsilon(y_data1, y_data2, t_cut, sum_direction)
+        
+        
+        current_signal_efficiency = (s / (s + b + 1))
+        current_signal_significance = (s / np.sqrt(s + b + 1))
+        signal_efficiency_list.append(current_signal_efficiency)
+        signal_significance_list.append(current_signal_significance)
+            
+    return signal_efficiency_list, signal_significance_list
 
 def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, num_events): # NB!: bh = file1, sph = file2
-    # f(x|H_0)_0 and f(x|H_1)_1
-    # where x represents the value from x-axis (currently either meff or HT)
-    # H_0 is rejected signal and H_1 is wanted signal (either sphaleron or BH, or opposite).
-    # t_cut is the cut point on the graph chosen and represents where we either start or end the riemann sum.
-    # to find epsilon_b = area of f_0, and epsilon_s = area of f_1. W determines where the interval stops/starts.
-    # b = epsilon_b * N_b and s = epsilon_s * N_s (N is total number of events from each compared data)
-    # signal efficiency formula: optimal_selection = s / sqrt(s + b)
 
-    # don't need to iterate to the edges since t_cut will most likely be somewhere in the middle.
-    # also prevents index error.
-
-    ### NB: s / (s + b) zero_to_tcut + b / (b + s) t_cut_to_end = 1 doesn't happen. s of file 1 =/= s of file 2?
-
-    t = max(len(x_data_file1), len(x_data_file2))
-    t_cut1 = 0
-    t_cut2 = 0
-    N_b = num_events[0]
-    N_s = num_events[1]
-    signal_eff = 0
+    t_max = len(x_data_file1)
     signal_eff_list = []
-    optimal_t_cut = 0
     optimal_t_list = []
     # lists for plotting significance
     signal_efficiencies_list = []
     y_value_s_b_list = []
-    x_values_list = []
-    x_value_s_b_list = []
-    print("y_data1: ", y_data_file1)
-    print("y_data2: ", y_data_file2)
-    # turn y_data into pdfs
-    y_data_1_pdf = [float(y) / np.sum(y_data_file1) for y in y_data_file1]
-    y_data_2_pdf = [float(y) / np.sum(y_data_file2) for y in y_data_file2] 
-    print(y_data_1_pdf)
-    print(y_data_2_pdf)
+
     # choose summing direction
     sum_direction = None
     while sum_direction not in ['1', '2']:
@@ -213,41 +207,36 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
         sum_direction = raw_input("Selected integer corrosponding to your choice: ")
         if sum_direction not in ['1', '2']:
             print("Wrong value. Try again")
+
     # pick t_cut
-    
     for i, x in enumerate(x_data_file1):
         print(i, x)
-    t_cut = int(raw_input("select t_cut: "))
-    t_cut1 = t_cut
+    selected_t_cut = int(raw_input("select t_cut: "))
+    t_cut1 = selected_t_cut
+
     # sum all events from selected direction to t_cut
     ### NB: Choose blackhole file as first!!!
     if sum_direction == "1":
-        blackhole_events1_a = sum(y_data_file1[:t_cut])
-        sphaleron_events1_a = sum(y_data_file2[t_cut:])
-        blackhole_events1_r = sum(y_data_file1[t_cut:])
-        sphaleron_events1_r = sum(y_data_file2[:t_cut])
+        blackhole_events1_a = sum(y_data_file1[:selected_t_cut])
+        sphaleron_events1_a = sum(y_data_file2[selected_t_cut:])
+        blackhole_events1_r = sum(y_data_file1[selected_t_cut:])
+        sphaleron_events1_r = sum(y_data_file2[:selected_t_cut])
     else:
-        blackhole_events1_a = sum(y_data_file1[t_cut:])
-        sphaleron_events1_a = sum(y_data_file2[:t_cut])
-        blackhole_events1_r = sum(y_data_file1[:t_cut])
-        sphaleron_events1_r = sum(y_data_file2[t_cut:])
+        blackhole_events1_a = sum(y_data_file1[selected_t_cut:])
+        sphaleron_events1_a = sum(y_data_file2[:selected_t_cut])
+        blackhole_events1_r = sum(y_data_file1[:selected_t_cut])
+        sphaleron_events1_r = sum(y_data_file2[selected_t_cut:])
 
     b = blackhole_events1_r
     s = sphaleron_events1_a
     current_signal_eff = (s / np.sqrt(s + b))
 
-    # get highest signal_eff method
-    if signal_eff < current_signal_eff:
-        signal_eff = current_signal_eff
-        optimal_t_cut = x_data_file1[t_cut]
+    signal_efficiencies_list, signal_significance_list = make_signal_efficiency_significance_list(t_max, y_data_file1, y_data_file2, sum_direction, True)
 
-    signal_efficiencies_list.append(current_signal_eff)
-    x_values_list.append(x_data_file1[t_cut])
-
-    y_value_s_b_list.append(signal_efficiencies_list)
-    x_value_s_b_list.append(x_values_list)
-    signal_eff_list.append(signal_eff)
-    optimal_t_list.append(optimal_t_cut)
+    y_value_s_b_list.append([signal_significance_list, signal_efficiencies_list])
+    
+    signal_eff_list.append(current_signal_eff)
+    optimal_t_list.append(t_cut1)
 
 
     ###### sum for opposite s and b ######
@@ -258,46 +247,39 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
         sum_direction = "1"
 
     signal_efficiencies_list = []
-    x_values_list = []
     signal_eff = 0
     optimal_t_cut = 0
     
+    # pick t_cut
     for i, x in enumerate(x_data_file1):
         print(i, x)
-    t_cut = int(raw_input("select t_cut: "))
-    t_cut2 = t_cut
+    selected_t_cut = int(raw_input("select t_cut: "))
+    t_cut2 = selected_t_cut
+
     # sum all events from selected direction to t_cut
     if sum_direction == "2":
-        blackhole_events2_a = sum(y_data_file1[t_cut:])
-        sphaleron_events2_a = sum(y_data_file2[:t_cut])
-        blackhole_events2_r = sum(y_data_file1[:t_cut])
-        sphaleron_events2_r = sum(y_data_file2[t_cut:])
+        blackhole_events2_a = sum(y_data_file1[selected_t_cut:])
+        sphaleron_events2_a = sum(y_data_file2[:selected_t_cut])
+        blackhole_events2_r = sum(y_data_file1[:selected_t_cut])
+        sphaleron_events2_r = sum(y_data_file2[selected_t_cut:])
     else:
-        blackhole_events2_a = sum(y_data_file1[:t_cut])
-        sphaleron_events2_a = sum(y_data_file2[t_cut:])
-        blackhole_events2_r = sum(y_data_file1[t_cut:])
-        sphaleron_events2_r = sum(y_data_file2[:t_cut])
+        blackhole_events2_a = sum(y_data_file1[:selected_t_cut])
+        sphaleron_events2_a = sum(y_data_file2[selected_t_cut:])
+        blackhole_events2_r = sum(y_data_file1[selected_t_cut:])
+        sphaleron_events2_r = sum(y_data_file2[:selected_t_cut])
 
     b = blackhole_events2_r
     s = sphaleron_events2_a
     current_signal_eff = (s / np.sqrt(s + b))
-    # get highest signal_eff method
-    if signal_eff < current_signal_eff:
-        signal_eff = current_signal_eff
-        optimal_t_cut = x_data_file1[t_cut]
 
-    signal_efficiencies_list.append(current_signal_eff)
-    x_values_list.append(x_data_file1[t_cut])
-    #######
+    signal_efficiencies_list, signal_significance_list = make_signal_efficiency_significance_list(t_max, y_data_file1, y_data_file2, sum_direction, False)
 
-    y_value_s_b_list.append(signal_efficiencies_list)
-    x_value_s_b_list.append(x_values_list)
-    signal_eff_list.append(signal_eff)
-    optimal_t_list.append(optimal_t_cut)
+    y_value_s_b_list.append([signal_significance_list, signal_efficiencies_list])
+    
+    signal_eff_list.append(current_signal_eff)
+    optimal_t_list.append(t_cut2)
     print(signal_eff_list)
     print(optimal_t_list)
-
-    print("Signal efficiency given t_cut: {}".format(optimal_t_cut))
     
     print(" t_cut 1:")
     print(" Sph/Bh accept: {} / {}".format(sphaleron_events1_a, blackhole_events1_a))
@@ -308,6 +290,5 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     print(" Sph/Bh accept: {} / {}".format(sphaleron_events2_a, blackhole_events2_a))
     print(" Sph/Bh reject: {} / {}".format(sphaleron_events2_r, blackhole_events2_r))
     print(" Sph/Bh total: {} / {}".format(sphaleron_events2_a + sphaleron_events2_r, blackhole_events2_a + blackhole_events2_r))
-    print(" uncertainty of t_cut2 based on 3 bins from chosen cut: {} +- {}".format(x_data_file1[t_cut2], abs(x_data_file1[t_cut2] - x_data_file1[t_cut2 + 3])))
-    print("Signal_eff =", signal_eff)
-    return signal_eff_list, optimal_t_list, y_value_s_b_list, x_value_s_b_list
+    print(" uncertainty of t_cut 2 based on 3 bins from chosen cut: {} +- {}".format(x_data_file1[t_cut2], abs(x_data_file1[t_cut2] - x_data_file1[t_cut2 + 3])))
+    return signal_eff_list, optimal_t_list, y_value_s_b_list

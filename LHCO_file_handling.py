@@ -84,10 +84,13 @@ def processed_file_to_data(file_path_list, selected_files, plot_type):
     x_data = []
     y_data = []
     num_events_list = []
+    signal_eff_list = None
     signal_eff = None
     t_cut_optimal = None
-
-    particle_name, prop_name = select_particle_and_property(plot_type)
+    if plot_type in ['particle_properties', 'delta_R_per_event']:
+        particle_name, prop_name = select_particle_and_property(plot_type)
+    else:
+        particle_name, prop_name = (None, None)
     if (len(selected_files) == 2) and (plot_type in ['HT', 'meff']):
         file_name1 = file_path_list[selected_files[0]]
         events1 = process_selected_file(file_name1)
@@ -104,7 +107,7 @@ def processed_file_to_data(file_path_list, selected_files, plot_type):
             legend_labels.append(file_name1)
             legend_labels.append(file_name2)
             
-        signal_eff, t_cut_optimal, _, _ = signal_efficiency(x_data[0], y_data[0], x_data[1], y_data[1], num_events_list)
+        signal_eff, t_cut_optimal, signal_eff_list = signal_efficiency(x_data[0], y_data[0], x_data[1], y_data[1], num_events_list)
     else:
         for idx in selected_files:
             if 0 <= idx < len(file_path_list):
@@ -117,7 +120,7 @@ def processed_file_to_data(file_path_list, selected_files, plot_type):
                     legend_labels.append(file_name)
     # get signal efficiency if only 2 files and HT, meff data is analyzed
 
-    return x_data, y_data, legend_labels, particle_name, prop_name, signal_eff, t_cut_optimal
+    return x_data, y_data, legend_labels, particle_name, prop_name, signal_eff, t_cut_optimal, signal_eff_list
 
 
 ### main prompt selection functions ###
