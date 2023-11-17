@@ -17,10 +17,10 @@ def main():
     plot_type = plot_selection_prompt()
 
     # file to data
-    x_data, y_data, legend_labels, particle_name, prop_name, signal_eff, t_cut_optimal = processed_file_to_data(file_list, selected_files, plot_type)
+    x_data, y_data, legend_labels, particle_name, prop_name, signal_eff, t_cut_optimal, signal_eff_list = processed_file_to_data(file_list, selected_files, plot_type)
     
     # plotting
-    plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plot_type, signal_eff, t_cut_optimal)
+    plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plot_type, signal_eff, t_cut_optimal, signal_eff_list)
 
 # run
 if __name__ == "__main__":

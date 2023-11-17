@@ -3,7 +3,7 @@ import os
 
 
 ### main plotting functions ###
-def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plot_type, signal_eff, t_cut_optimal):
+def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plot_type, signal_eff, t_cut_optimal, signal_eff_list):
     """
     plot all data into one line plot 
 
@@ -69,13 +69,13 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
             ax2.plot(x_phi, y_phi, '-', label=label)
         
         ax1.grid()
-        ax1.set_xlabel('Events')
-        ax1.set_ylabel('Largest PT (GeV)')
+        ax1.set_xlabel('Largest PT [GeV]')
+        ax1.set_ylabel("Relative Frequency")
         ax1.legend()
 
         ax2.grid()
-        ax2.set_xlabel('Event')
-        ax2.set_ylabel('Delta Phi (angle)')
+        ax2.set_xlabel('Delta Phi []')
+        ax2.set_ylabel("Relative Frequency")
         ax2.legend()
 
         plt.tight_layout()
@@ -117,7 +117,18 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
 
     elif plot_type in ['HT', 'meff']:
         fig = plt.figure()
-        ax1 = fig.add_subplot(111)
+        sig_vs_tcut_plot = ""
+        while sig_vs_tcut_plot not in ["y", "n"]:
+            print("Add signal vs tcut plot (y/n)?")
+            sig_vs_tcut_plot = raw_input("\n")
+            if sig_vs_tcut_plot not in ["y", "n"]:
+                print("Not valid choice. Please choose 'y' for yes or 'n' for no")
+        if sig_vs_tcut_plot == "y":
+            ax1 = fig.add_subplot(311)
+            ax2 = fig.add_subplot(312)
+            ax3 = fig.add_subplot(313)
+        else:
+            ax1 = fig.add_subplot(111)
         unit = ""
 
         # make plot for each data file
@@ -127,18 +138,38 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
             t_cut_idx = 0 
             for x, y in zip(x_data, y_data):
              
-                ax1.axvline(x=t_cut_optimal[t_cut_idx], linestyle='--', color=colorlist[t_cut_idx], label='T_cut Optimal ({}), with Significance ({})'.format(t_cut_optimal[t_cut_idx], signal_eff[t_cut_idx]))
+                ax1.axvline(x=t_cut_optimal[t_cut_idx], linestyle='--', color=colorlist[t_cut_idx], label='T_cut ({}), with Significance ({})'.format(t_cut_optimal[t_cut_idx], signal_eff[t_cut_idx]))
                 t_cut_idx += 1
 
-        loop = 0
-        # make plot of Ht/meff
-        for label, x, y in zip(legend_labels, x_data, y_data):
-            if len(x_data) == 2 and loop == 0:
-                chosen_file = "first choice: "
-            elif len(x_data) == 2 and loop == 1:
-                chosen_file = "second choice: "
-            ax1.plot(x, y, '-', color=colorlist[loop], label="{}{}".format(chosen_file, label))
-            loop += 1
+            loop = 0
+            # make plot of Ht/meff
+            for label, x, y in zip(legend_labels, x_data, y_data):
+                if loop == 0:
+                    chosen_file = "blackhole: "
+                elif loop == 1:
+                    chosen_file = "sphaleron: "
+                ax1.plot(x, y, '-', color=colorlist[loop], label="{}{}".format(chosen_file, label))
+                if sig_vs_tcut_plot == "y":
+                    ax2.plot(x, signal_eff_list[loop][0], color=colorlist[loop])
+                    ax3.plot(x, signal_eff_list[loop][1], color=colorlist[loop])
+                loop += 1
+            if sig_vs_tcut_plot == "y":
+                ax2.grid()
+                ax2.set_title("Significance")
+                ax2.set_ylabel('Frequency')
+                
+                ax3.grid()
+                ax3.set_title("Efficiency")
+                ax3.set_ylabel('Frequency')
+                ax3.set_xlabel("{} [GeV]".format(plot_type))
+                
+
+            
+        else: 
+            # make plot of Ht/meff
+            for label, x, y in zip(legend_labels, x_data, y_data):
+                ax1.plot(x, y, '-', label="{}".format(label))
+            ax1.set_xlabel("{} [GeV]".format(plot_type))
             
         ax1.grid()
         ax1.set_title('{}'.format(plot_type))

@@ -84,10 +84,13 @@ def processed_file_to_data(file_path_list, selected_files, plot_type):
     x_data = []
     y_data = []
     num_events_list = []
+    signal_eff_list = None
     signal_eff = None
     t_cut_optimal = None
-
-    particle_name, prop_name = select_particle_and_property(plot_type)
+    if plot_type in ['particle_properties', 'delta_R_per_event']:
+        particle_name, prop_name = select_particle_and_property(plot_type)
+    else:
+        particle_name, prop_name = (None, None)
     if (len(selected_files) == 2) and (plot_type in ['HT', 'meff']):
         file_name1 = file_path_list[selected_files[0]]
         events1 = process_selected_file(file_name1)
@@ -104,7 +107,7 @@ def processed_file_to_data(file_path_list, selected_files, plot_type):
             legend_labels.append(file_name1)
             legend_labels.append(file_name2)
             
-        signal_eff, t_cut_optimal, _, _ = signal_efficiency(x_data[0], y_data[0], x_data[1], y_data[1], num_events_list)
+        signal_eff, t_cut_optimal, signal_eff_list = signal_efficiency(x_data[0], y_data[0], x_data[1], y_data[1], num_events_list)
     else:
         for idx in selected_files:
             if 0 <= idx < len(file_path_list):
@@ -113,11 +116,11 @@ def processed_file_to_data(file_path_list, selected_files, plot_type):
                 num_events_list.append(len(events))
 
                 if events is not None:
-                    x_data, y_data = process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name, False)
+                    x_data, y_data = process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop_name)
                     legend_labels.append(file_name)
     # get signal efficiency if only 2 files and HT, meff data is analyzed
 
-    return x_data, y_data, legend_labels, particle_name, prop_name, signal_eff, t_cut_optimal
+    return x_data, y_data, legend_labels, particle_name, prop_name, signal_eff, t_cut_optimal, signal_eff_list
 
 
 ### main prompt selection functions ###
@@ -260,6 +263,8 @@ def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop
         y_data.append([electrons, muons, taus])
     elif plot_type == 'largest_PT_in_event':
         largest_PT, delta_phi = largest_PT_in_event(events)
+        bincenters_PT, y_PT = data_to_bincenter_histogram(largest_PT, 50)
+        bincenters_phi, y_phi = data_to_bincenter_histogram(delta_phi, 50)
         
         # Divide the events into bins
         bin_size = len(largest_PT) // 100
@@ -267,8 +272,8 @@ def process_data_for_plot(events, x_data, y_data, plot_type, particle_name, prop
         binned_PT = [np.mean(largest_PT[i:i+bin_size]) for i in binned_events]
         binned_phi = [np.mean(delta_phi[i:i+bin_size]) for i in binned_events]
 
-        x_data.append([binned_events, binned_events])
-        y_data.append([binned_PT, binned_phi])
+        x_data.append([bincenters_PT, bincenters_phi])
+        y_data.append([y_PT, y_phi])
     elif plot_type == 'delta_R_per_event':
         delta_R = delta_R_per_event(events, particle_name)
          # Divide the events into bins
