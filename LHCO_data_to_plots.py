@@ -61,12 +61,65 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
         plt.tight_layout()
     elif plot_type == 'largest_PT_in_event':
         # New code for binned events line plot
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 12))
+        #####
+        fig = plt.figure()
+        sig_vs_tcut_plot = ""
+        while sig_vs_tcut_plot not in ["y", "n"]:
+            print("Add signal vs tcut plot (y/n)?")
+            sig_vs_tcut_plot = raw_input()
+            if sig_vs_tcut_plot not in ["y", "n"]:
+                print("Not valid choice. Please choose 'y' for yes or 'n' for no")
+        if sig_vs_tcut_plot == "y":
+            ax1 = fig.add_subplot(221)
+            ax1_a = fig.add_subplot(222)
+            ax1_b = fig.add_subplot(224)
+            ax2 = fig.add_subplot(223)
+            """ ax2_a = fig.add_subplot(322)
+            ax2_b = fig.add_subplot(323) """
+        else:
+            ax1 = fig.add_subplot(211)
+            ax2 = fig.add_subplot(212)
+        unit = ""
 
+        # make plot for each data file
+        chosen_file = ""
+        colorlist = ["red", "blue", "purple"]
+        if signal_eff and t_cut_optimal != None: 
+            t_cut_idx = 0 
+            print(len(x_data))
+            for _ in colorlist:
+                ax1.axvline(x=t_cut_optimal[t_cut_idx], linestyle='--', color=colorlist[t_cut_idx], label='T_cut ({}), with Significance ({})'.format(t_cut_optimal[t_cut_idx], signal_eff[t_cut_idx]))
+                t_cut_idx += 1
+
+            loop = 0
+            # make plot of Ht/meff
+            for label, (x_PT, x_phi), (y_PT, y_phi) in zip(legend_labels, x_data, y_data):
+                if loop == 0:
+                    chosen_file = "blackhole: "
+                elif loop == 1:
+                    chosen_file = "sphaleron: "
+                ax1.plot(x_PT, y_PT, '-', color=colorlist[loop], label="{}{}".format(chosen_file, label))
+                ax2.plot(x_phi, y_phi, '-', color=colorlist[loop], label="{}{}".format(chosen_file, label))
+                if sig_vs_tcut_plot == "y":
+                    ax1_a.plot(x_PT, signal_eff_list[loop][0], color=colorlist[loop])
+                    ax1_b.plot(x_PT, signal_eff_list[loop][1], color=colorlist[loop])
+                loop += 1
+            if sig_vs_tcut_plot == "y":
+                ax1_a.grid()
+                ax1_a.set_title("Significance")
+                ax1_a.set_ylabel('Frequency')
+                
+                ax1_b.grid()
+                ax1_b.set_title("Efficiency")
+                ax1_b.set_ylabel('Frequency')
+                ax1_b.set_xlabel("{} [GeV]".format(plot_type))
+            
+        else: 
+        #####
         # Make plot for each data file
-        for label, (x_PT, x_phi), (y_PT, y_phi) in zip(legend_labels, x_data, y_data):
-            ax1.plot(x_PT, y_PT, '-', label=label)
-            ax2.plot(x_phi, y_phi, '-', label=label)
+            for label, (x_PT, x_phi), (y_PT, y_phi) in zip(legend_labels, x_data, y_data):
+                ax1.plot(x_PT, y_PT, '-', label=label)
+                ax2.plot(x_phi, y_phi, '-', label=label)
         
         ax1.grid()
         ax1.set_xlabel('Largest PT [GeV]')
@@ -120,7 +173,7 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
         sig_vs_tcut_plot = ""
         while sig_vs_tcut_plot not in ["y", "n"]:
             print("Add signal vs tcut plot (y/n)?")
-            sig_vs_tcut_plot = raw_input("\n")
+            sig_vs_tcut_plot = raw_input()
             if sig_vs_tcut_plot not in ["y", "n"]:
                 print("Not valid choice. Please choose 'y' for yes or 'n' for no")
         if sig_vs_tcut_plot == "y":
@@ -133,11 +186,11 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
 
         # make plot for each data file
         chosen_file = ""
-        colorlist = ["red", "blue"]
+        colorlist = ["red", "blue", "purple"]
         if signal_eff and t_cut_optimal != None: 
             t_cut_idx = 0 
-            for x, y in zip(x_data, y_data):
-             
+            print(len(x_data))
+            for _ in colorlist:
                 ax1.axvline(x=t_cut_optimal[t_cut_idx], linestyle='--', color=colorlist[t_cut_idx], label='T_cut ({}), with Significance ({})'.format(t_cut_optimal[t_cut_idx], signal_eff[t_cut_idx]))
                 t_cut_idx += 1
 
@@ -162,8 +215,6 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
                 ax3.set_title("Efficiency")
                 ax3.set_ylabel('Frequency')
                 ax3.set_xlabel("{} [GeV]".format(plot_type))
-                
-
             
         else: 
             # make plot of Ht/meff

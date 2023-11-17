@@ -179,7 +179,7 @@ def make_signal_efficiency_significance_list(t_max, y_data1, y_data2, sum_direct
         if sph_is_accept:
             s, _, _, b = calculate_epsilon(y_data1, y_data2, t_cut, sum_direction)
         else:
-            b, _, _, s = calculate_epsilon(y_data1, y_data2, t_cut, sum_direction)
+            _, s, b, _ = calculate_epsilon(y_data1, y_data2, t_cut, sum_direction)
         
         
         current_signal_efficiency = (s / (s + b + 1))
@@ -190,13 +190,14 @@ def make_signal_efficiency_significance_list(t_max, y_data1, y_data2, sum_direct
     return signal_efficiency_list, signal_significance_list
 
 def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, num_events): # NB!: bh = file1, sph = file2
-
+    print(x_data_file1)
     t_max = len(x_data_file1)
     signal_eff_list = []
     optimal_t_list = []
     # lists for plotting significance
     signal_efficiencies_list = []
     y_value_s_b_list = []
+
 
     # choose summing direction
     sum_direction = None
@@ -236,25 +237,37 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     y_value_s_b_list.append([signal_significance_list, signal_efficiencies_list])
     
     signal_eff_list.append(current_signal_eff)
-    optimal_t_list.append(t_cut1)
+    optimal_t_list.append(x_data_file1[t_cut1])
 
 
     ###### sum for opposite s and b ######
     # invert direction
-    if sum_direction == "1":
+    if sum_direction == "2":
         sum_direction = "2"
     else: 
         sum_direction = "1"
 
     signal_efficiencies_list = []
-    signal_eff = 0
-    optimal_t_cut = 0
     
     # pick t_cut
     for i, x in enumerate(x_data_file1):
         print(i, x)
     selected_t_cut = int(raw_input("select t_cut: "))
     t_cut2 = selected_t_cut
+
+    # make median tcut
+    min_t_cut = min(t_cut1, t_cut2)
+    median_t_cut = x_data_file1[min_t_cut] + float(abs(x_data_file1[t_cut1] - x_data_file1[t_cut2]))/2
+
+    # find where median tcut is
+    print("finding median t cut...")
+    for idx in range(len(x_data_file1) - 1):
+        if median_t_cut > x_data_file1[idx] and median_t_cut < x_data_file1[idx + 1]:
+            t_cut3 = idx
+            print(x_data_file1[idx])
+        elif median_t_cut == x_data_file1[idx]:
+            t_cut3 = idx
+            print(x_data_file1[idx])
 
     # sum all events from selected direction to t_cut
     if sum_direction == "2":
@@ -277,7 +290,31 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     y_value_s_b_list.append([signal_significance_list, signal_efficiencies_list])
     
     signal_eff_list.append(current_signal_eff)
-    optimal_t_list.append(t_cut2)
+    optimal_t_list.append(x_data_file1[t_cut2])
+    optimal_t_list.append(x_data_file1[t_cut3])
+
+    # invert direction
+    if sum_direction == "1":
+        sum_direction = "2"
+    else: 
+        sum_direction = "1"
+
+    if sum_direction == "1":
+        blackhole_events1_a = sum(y_data_file1[:t_cut3])
+        sphaleron_events1_a = sum(y_data_file2[t_cut3:])
+        blackhole_events1_r = sum(y_data_file1[t_cut3:])
+        sphaleron_events1_r = sum(y_data_file2[:t_cut3])
+    else:
+        blackhole_events1_a = sum(y_data_file1[t_cut3:])
+        sphaleron_events1_a = sum(y_data_file2[:t_cut3])
+        blackhole_events1_r = sum(y_data_file1[:t_cut3])
+        sphaleron_events1_r = sum(y_data_file2[t_cut3:])
+
+    b = blackhole_events1_r
+    s = sphaleron_events1_a
+    current_signal_eff = (s / np.sqrt(s + b))
+    signal_eff_list.append(current_signal_eff)
+
     print(signal_eff_list)
     print(optimal_t_list)
     
@@ -291,4 +328,5 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     print(" Sph/Bh reject: {} / {}".format(sphaleron_events2_r, blackhole_events2_r))
     print(" Sph/Bh total: {} / {}".format(sphaleron_events2_a + sphaleron_events2_r, blackhole_events2_a + blackhole_events2_r))
     print(" uncertainty of t_cut 2 based on 3 bins from chosen cut: {} +- {}".format(x_data_file1[t_cut2], abs(x_data_file1[t_cut2] - x_data_file1[t_cut2 + 3])))
+    print("\n median tcut: {}".format(x_data_file1[min_t_cut] + float(abs(x_data_file1[t_cut1] - x_data_file1[t_cut2]))/2))
     return signal_eff_list, optimal_t_list, y_value_s_b_list
