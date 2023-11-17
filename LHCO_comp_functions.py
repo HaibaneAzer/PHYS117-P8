@@ -314,4 +314,5 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     print(" S/B total: {} / {}".format(sphaleron_events2_a + sphaleron_events2_r, blackhole_events2_a + blackhole_events2_r))
     print(" uncertainty of t_cut2 based on 3 bins from chosen cut: {} +- {}".format(x_data_file1[t_cut2], abs(x_data_file1[t_cut2] - x_data_file1[t_cut2 + 3])))
     print("Signal_eff =", signal_eff)
+    print("\n median tcut: {}".format(float(abs(x_data_file1[t_cut1] - x_data_file1[t_cut2]))/2))
     return signal_eff_list, optimal_t_list, y_value_s_b_list, x_value_s_b_list
