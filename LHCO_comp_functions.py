@@ -190,7 +190,7 @@ def make_signal_efficiency_significance_list(t_max, y_data1, y_data2, sum_direct
     return signal_efficiency_list, signal_significance_list
 
 def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, num_events): # NB!: bh = file1, sph = file2
-    print(x_data_file1)
+    
     t_max = len(x_data_file1)
     signal_eff_list = []
     optimal_t_list = []
@@ -228,8 +228,8 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
         blackhole_events1_r = sum(y_data_file1[:selected_t_cut])
         sphaleron_events1_r = sum(y_data_file2[selected_t_cut:])
 
-    b = blackhole_events1_r
-    s = sphaleron_events1_a
+    s = blackhole_events1_a # must corrospond to make_signal_efficiency_significance_list
+    b = sphaleron_events1_r
     current_signal_eff = (s / np.sqrt(s + b))
 
     signal_efficiencies_list, signal_significance_list = make_signal_efficiency_significance_list(t_max, y_data_file1, y_data_file2, sum_direction, True)
@@ -242,7 +242,7 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
 
     ###### sum for opposite s and b ######
     # invert direction
-    if sum_direction == "2":
+    if sum_direction == "1":
         sum_direction = "2"
     else: 
         sum_direction = "1"
@@ -281,7 +281,7 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
         blackhole_events2_r = sum(y_data_file1[selected_t_cut:])
         sphaleron_events2_r = sum(y_data_file2[:selected_t_cut])
 
-    b = blackhole_events2_r
+    b = blackhole_events2_r # same as for first one
     s = sphaleron_events2_a
     current_signal_eff = (s / np.sqrt(s + b))
 
@@ -310,13 +310,13 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
         blackhole_events1_r = sum(y_data_file1[:t_cut3])
         sphaleron_events1_r = sum(y_data_file2[t_cut3:])
 
-    b = blackhole_events1_r
-    s = sphaleron_events1_a
+    s = blackhole_events1_a
+    b = sphaleron_events1_r
     current_signal_eff = (s / np.sqrt(s + b))
     signal_eff_list.append(current_signal_eff)
 
-    print(signal_eff_list)
-    print(optimal_t_list)
+    print("significance values: {}".format(signal_eff_list))
+    print("t_cuts: {}".format(optimal_t_list))
     
     print(" t_cut 1:")
     print(" Sph/Bh accept: {} / {}".format(sphaleron_events1_a, blackhole_events1_a))

@@ -86,9 +86,9 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
         colorlist = ["red", "blue", "purple"]
         if signal_eff and t_cut_optimal != None: 
             t_cut_idx = 0 
-            print(len(x_data))
             for _ in colorlist:
-                ax1.axvline(x=t_cut_optimal[t_cut_idx], linestyle='--', color=colorlist[t_cut_idx], label='T_cut ({}), with Significance ({})'.format(t_cut_optimal[t_cut_idx], signal_eff[t_cut_idx]))
+                label_ax1 = 'T_cut ({}), with Significance ({})'.format(t_cut_optimal[t_cut_idx], signal_eff[t_cut_idx]) # removed for now...
+                ax1.axvline(x=t_cut_optimal[t_cut_idx], linestyle='--', color=colorlist[t_cut_idx])
                 t_cut_idx += 1
 
             loop = 0
@@ -106,12 +106,10 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
                 loop += 1
             if sig_vs_tcut_plot == "y":
                 ax1_a.grid()
-                ax1_a.set_title("Significance")
-                ax1_a.set_ylabel('Frequency')
+                ax1_a.set_ylabel("Significance")
                 
                 ax1_b.grid()
-                ax1_b.set_title("Efficiency")
-                ax1_b.set_ylabel('Frequency')
+                ax1_b.set_ylabel("Efficiency")
                 ax1_b.set_xlabel("{} [GeV]".format(plot_type))
             
         else: 
@@ -189,9 +187,9 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
         colorlist = ["red", "blue", "purple"]
         if signal_eff and t_cut_optimal != None: 
             t_cut_idx = 0 
-            print(len(x_data))
             for _ in colorlist:
-                ax1.axvline(x=t_cut_optimal[t_cut_idx], linestyle='--', color=colorlist[t_cut_idx], label='T_cut ({}), with Significance ({})'.format(t_cut_optimal[t_cut_idx], signal_eff[t_cut_idx]))
+                label_ax1 = 'T_cut ({}), with Significance ({})'.format(t_cut_optimal[t_cut_idx], signal_eff[t_cut_idx]) # removed for now...
+                ax1.axvline(x=t_cut_optimal[t_cut_idx], linestyle='--', color=colorlist[t_cut_idx])
                 t_cut_idx += 1
 
             loop = 0
@@ -208,12 +206,10 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
                 loop += 1
             if sig_vs_tcut_plot == "y":
                 ax2.grid()
-                ax2.set_title("Significance")
-                ax2.set_ylabel('Frequency')
+                ax2.set_ylabel("Significance")
                 
                 ax3.grid()
-                ax3.set_title("Efficiency")
-                ax3.set_ylabel('Frequency')
+                ax3.set_ylabel("Efficiency")
                 ax3.set_xlabel("{} [GeV]".format(plot_type))
             
         else: 
@@ -224,7 +220,7 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
             
         ax1.grid()
         ax1.set_title('{}'.format(plot_type))
-        ax1.set_ylabel('Relative Frequency')
+        ax1.set_ylabel('Frequency')
         ax1.legend()
 
     else: # all other plot types as line graph

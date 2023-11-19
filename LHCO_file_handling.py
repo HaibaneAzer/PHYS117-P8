@@ -340,7 +340,7 @@ def data_to_equal_binwidth_histogram(data1, data2):
     # gives same binwidth for both files, with range adjusted to 
     # be equal for both.
     # Determine the larger range
-    print("num events: d1({}), d2({})".format(len(data1), len(data2)))
+    """ print("num events: d1({}), d2({})".format(len(data1), len(data2))) """ # test
     min_val = min(np.min(data1), np.min(data2))
     max_val = max(np.max(data1), np.max(data2))
     max_range = max_val - min_val
