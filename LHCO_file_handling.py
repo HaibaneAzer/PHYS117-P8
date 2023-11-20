@@ -11,7 +11,8 @@ from LHCO_comp_functions import (
     electrons_muons_taus_per_event,
     largest_PT_in_event,
     delta_R_per_event,
-    signal_efficiency
+    signal_efficiency,
+    filter_events_by_HT
 )
 
 print("path: ", os.getcwd())
@@ -220,6 +221,15 @@ def filter_events_prompt():
             print("choose either yes 'y' or no 'n'")
     return choose_to_filter
 
+def choose_filtered_events():
+    print("which side of tcut do you choose(l/r)?")
+    choose_events = ""
+    while choose_events not in ["l","r"]:
+        choose_events = raw_input()
+        if choose_events not in ["l","r"]:
+            print("choose either left 'l' or right 'r'")
+    return choose_events
+
 def filter_events_from_list(data):
     filtered_data = []
     
@@ -239,7 +249,6 @@ def filter_events_from_list(data):
             if value <= choose_tcut:
                 filtered_data.append(value)
     return filtered_data
-        
 
 def process_data_for_plot_comparison(events, x_data, y_data, plot_type):
     if plot_type == 'HT':
@@ -267,14 +276,23 @@ def process_data_for_plot_comparison(events, x_data, y_data, plot_type):
     elif plot_type == 'largest_PT_in_event':
         # filter events before making largest pt in event list
 
-        #
-
-        largest_PT1, delta_phi1 = largest_PT_in_event(events[0])
-        largest_PT2, delta_phi2 = largest_PT_in_event(events[1])
-        print()
         if filter_events_prompt() == "y":
-            largest_PT1 = filter_events_from_list(largest_PT1)
-            largest_PT2 = filter_events_from_list(largest_PT2)
+            print("choose PT [GeV] value of tcut: ")
+            choose_tcut = float(raw_input())
+            if choose_filtered_events() == "l":
+                events1, _ = filter_events_by_HT(events[0], choose_tcut)
+                events2, _ = filter_events_by_HT(events[1], choose_tcut)
+            else:
+                _, events1 = filter_events_by_HT(events[0], choose_tcut)
+                _, events2 = filter_events_by_HT(events[1], choose_tcut)
+
+            largest_PT1, delta_phi1 = largest_PT_in_event(events1)
+            largest_PT2, delta_phi2 = largest_PT_in_event(events2)
+        else:
+            largest_PT1, delta_phi1 = largest_PT_in_event(events[0])
+            largest_PT2, delta_phi2 = largest_PT_in_event(events[1])
+        
+
 
         bincenters_PT, y_PT1, y_PT2 = data_to_equal_binwidth_histogram(largest_PT1, largest_PT2)
         bincenters_phi, y_phi1, y_phi2 = data_to_equal_binwidth_histogram(delta_phi1, delta_phi2)

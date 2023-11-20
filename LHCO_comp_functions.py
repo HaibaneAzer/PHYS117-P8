@@ -84,6 +84,24 @@ def largest_PT_in_event(events):
     
     return Largest_PT_per_event, delta_phi
 
+def filter_events_by_HT(events, HT_value):
+    """ first return value is less than HT_value, second is greater """
+    objects_for_HT = ['photon', 'electron', 'muon', 'tau', 'jet']
+
+    # get HT of event
+    events_left = []
+    events_right = []
+    for event in events:
+        HT = 0
+        for particle in objects_for_HT:
+            if particle in event:
+                HT += sum(p["PT"] for p in event[particle])
+        if HT < HT_value:
+            events_left.append(event)
+        else:
+            events_right.append(event)
+    return events_left, events_right
+
 def delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT):
     # difference in phi between such objects and met
 
@@ -285,7 +303,7 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     s = sphaleron_events2_a
     current_signal_eff = (s / np.sqrt(s + b))
 
-    signal_efficiencies_list, signal_significance_list = make_signal_efficiency_significance_list(t_max, y_data_file1, y_data_file2, sum_direction, False)
+    signal_efficiencies_list, signal_significance_list = make_signal_efficiency_significance_list(t_max, y_data_file1, y_data_file2, sum_direction, True)
 
     y_value_s_b_list.append([signal_significance_list, signal_efficiencies_list])
     
