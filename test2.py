@@ -1,11 +1,17 @@
 from LHCO_reader import LHCO_reader
+import os
+background = "background/"
+events1 = LHCO_reader.Events(f_name=background+"ttbar.lhco") # 100000
+events2 = LHCO_reader.Events(f_name=background+"ttbar_largejet.lhco")
 
-events = LHCO_reader.Events(f_name="example.lhco") # 10000
+# print(len(events1)) # 100000
+# print(len(events2)) # 100000
 
-""" objects_1 = ['electron', 'muon', 'tau'] """
+dirpath = os.path.join(os.path.dirname(__file__), "sphaleron")
+path_list = []
+for _, _, filename in os.walk(dirpath):
+    path_list = ["{}\{}".format(dirpath,file) for file in filename]    
 
-new_events_odd = events[1::2]
-new_events_even = events[0::2]
-print(len(new_events_even)) # 5000 
-print(len(new_events_odd)) # 5000
+for path in path_list:
+    print(path + ": ", len(LHCO_reader.Events(f_name=path)))
 

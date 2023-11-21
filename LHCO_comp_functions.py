@@ -275,7 +275,10 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
 
     # make median tcut
     min_t_cut = min(t_cut1, t_cut2)
-    median_t_cut = x_data_file1[min_t_cut] + float(abs(x_data_file1[t_cut1] - x_data_file1[t_cut2]))/2
+    if (t_cut1 == t_cut2 + 1) or (t_cut2 == t_cut1 + 1):
+        median_t_cut = x_data_file1[min_t_cut] + float(abs(x_data_file1[min_t_cut] - x_data_file1[min_t_cut + 1]))/2
+    else:
+        median_t_cut = x_data_file1[min_t_cut] + float(abs(x_data_file1[t_cut1] - x_data_file1[t_cut2]))/2
 
     # find where median tcut is
     print("finding median t cut...")
@@ -284,6 +287,7 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
             t_cut3 = idx
             print(x_data_file1[idx])
         elif median_t_cut == x_data_file1[idx]:
+            print("same")
             t_cut3 = idx
             print(x_data_file1[idx])
 
@@ -317,7 +321,7 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
     else: 
         sum_direction = "1"
 
-    if sum_direction == "1":
+    if sum_direction == "2":
         blackhole_events1_a = sum(y_data_file1[:t_cut3])
         sphaleron_events1_a = sum(y_data_file2[t_cut3:])
         blackhole_events1_r = sum(y_data_file1[t_cut3:])

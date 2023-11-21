@@ -55,7 +55,11 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
 
             ax.set_title('{} per Event'.format(particles[i]))
             ax.set_ylabel('Frequency')
-            ax.legend()
+
+            # adjust legends
+            box = ax.get_position()
+            ax.set_position([box.x0, box.y0, box.width*0.8, box.height])
+            ax.legend(bbox_to_anchor=(1, 0.5))
 
         plt.xlabel('Total Particles')
         plt.tight_layout()
@@ -122,12 +126,18 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
         ax1.grid()
         ax1.set_xlabel('Largest PT [GeV]')
         ax1.set_ylabel("Relative Frequency")
-        ax1.legend()
+        
+        """ box = ax1.get_position( )
+        ax1.set_position([box.x0, box.y0, box.width*0.6, box.height])
+        ax1.legend(bbox_to_anchor=(1, 0.5)) """
 
         ax2.grid()
         ax2.set_xlabel('Delta Phi []')
         ax2.set_ylabel("Relative Frequency")
-        ax2.legend()
+
+        """ box = ax2.get_position()
+        ax2.set_position([box.x0, box.y0, box.width*0.8, box.height])
+        ax2.legend(bbox_to_anchor=(1, 0.5)) """
 
         plt.tight_layout()
     elif plot_type == 'delta_R_per_event':
@@ -143,7 +153,10 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
         ax1.set_title("Delta_R(Largest {}, MET)".format(particle_name))
         ax1.set_xlabel('Delta R (Angle)')
         ax1.set_ylabel('Relative Frequency')
-        ax1.legend()
+        
+        box = ax1.get_position()
+        ax1.set_position([box.x0, box.y0, box.width*0.8, box.height])
+        ax1.legend(bbox_to_anchor=(1, 0.5))
 
         plt.tight_layout()
     elif plot_type == 'objects_per_event':
@@ -221,7 +234,10 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
         ax1.grid()
         ax1.set_title('{}'.format(plot_type))
         ax1.set_ylabel('Frequency')
-        ax1.legend()
+        
+        box = ax1.get_position( )
+        ax1.set_position([box.x0, box.y0, box.width*0.6, box.height])
+        ax1.legend(bbox_to_anchor=(1, 0.5))
 
     else: # all other plot types as line graph
         fig = plt.figure()
@@ -245,6 +261,9 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
         
         ax.set_xlabel('{} {}'.format(prop_name, unit))
         ax.set_ylabel('Relative Frequency')
-        ax.legend()
+
+        box = ax.get_position( )
+        ax.set_position([box.x0, box.y0, box.width*0.8, box.height])
+        ax.legend(bbox_to_anchor=(1, 0.5))
     # for all plots
     plt.show()
