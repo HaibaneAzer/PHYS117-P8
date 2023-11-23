@@ -74,15 +74,15 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
             if sig_vs_tcut_plot not in ["y", "n"]:
                 print("Not valid choice. Please choose 'y' for yes or 'n' for no")
         if sig_vs_tcut_plot == "y":
-            ax1 = fig.add_subplot(221)
-            ax1_a = fig.add_subplot(222)
-            ax1_b = fig.add_subplot(224)
-            ax2 = fig.add_subplot(223)
+            ax1 = fig.add_subplot(311)
+            ax1_a = fig.add_subplot(312)
+            ax1_b = fig.add_subplot(313)
+            """ ax2 = fig.add_subplot(223) """
             """ ax2_a = fig.add_subplot(322)
             ax2_b = fig.add_subplot(323) """
         else:
-            ax1 = fig.add_subplot(211)
-            ax2 = fig.add_subplot(212)
+            ax1 = fig.add_subplot(111)
+            """ ax2 = fig.add_subplot(212) """
         unit = ""
 
         # make plot for each data file
@@ -103,7 +103,7 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
                 elif loop == 1:
                     chosen_file = "sphaleron: "
                 ax1.plot(x_PT, y_PT, '-', color=colorlist[loop], label="{}{}".format(chosen_file, label))
-                ax2.plot(x_phi, y_phi, '-', color=colorlist[loop], label="{}{}".format(chosen_file, label))
+                """ ax2.plot(x_phi, y_phi, '-', color=colorlist[loop], label="{}{}".format(chosen_file, label)) """
                 if sig_vs_tcut_plot == "y":
                     ax1_a.plot(x_PT, signal_eff_list[loop][0], color=colorlist[loop])
                     ax1_b.plot(x_PT, signal_eff_list[loop][1], color=colorlist[loop])
@@ -114,26 +114,26 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
                 
                 ax1_b.grid()
                 ax1_b.set_ylabel("Efficiency")
-                ax1_b.set_xlabel("{} [GeV]".format(plot_type))
+                
             
         else: 
         #####
         # Make plot for each data file
             for label, (x_PT, x_phi), (y_PT, y_phi) in zip(legend_labels, x_data, y_data):
                 ax1.plot(x_PT, y_PT, '-', label=label)
-                ax2.plot(x_phi, y_phi, '-', label=label)
+                """ ax2.plot(x_phi, y_phi, '-', label=label) """
         
         ax1.grid()
-        ax1.set_xlabel('Largest PT [GeV]')
-        ax1.set_ylabel("Relative Frequency")
+        ax1_b.set_xlabel('Largest PT [GeV]')
+        ax1.set_ylabel("Frequency")
         
         """ box = ax1.get_position( )
         ax1.set_position([box.x0, box.y0, box.width*0.6, box.height])
         ax1.legend(bbox_to_anchor=(1, 0.5)) """
 
-        ax2.grid()
+        """ ax2.grid()
         ax2.set_xlabel('Delta Phi []')
-        ax2.set_ylabel("Relative Frequency")
+        ax2.set_ylabel("Relative Frequency") """
 
         """ box = ax2.get_position()
         ax2.set_position([box.x0, box.y0, box.width*0.8, box.height])

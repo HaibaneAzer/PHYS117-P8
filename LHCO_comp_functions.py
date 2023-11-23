@@ -322,18 +322,18 @@ def signal_efficiency(x_data_file1, y_data_file1, x_data_file2, y_data_file2, nu
         sum_direction = "1"
 
     if sum_direction == "2":
-        blackhole_events1_a = sum(y_data_file1[:t_cut3])
-        sphaleron_events1_a = sum(y_data_file2[t_cut3:])
-        blackhole_events1_r = sum(y_data_file1[t_cut3:])
-        sphaleron_events1_r = sum(y_data_file2[:t_cut3])
+        blackhole_events3_a = sum(y_data_file1[:t_cut3])
+        sphaleron_events3_a = sum(y_data_file2[t_cut3:])
+        blackhole_events3_r = sum(y_data_file1[t_cut3:])
+        sphaleron_events3_r = sum(y_data_file2[:t_cut3])
     else:
-        blackhole_events1_a = sum(y_data_file1[t_cut3:])
-        sphaleron_events1_a = sum(y_data_file2[:t_cut3])
-        blackhole_events1_r = sum(y_data_file1[:t_cut3])
-        sphaleron_events1_r = sum(y_data_file2[t_cut3:])
+        blackhole_events3_a = sum(y_data_file1[t_cut3:])
+        sphaleron_events3_a = sum(y_data_file2[:t_cut3])
+        blackhole_events3_r = sum(y_data_file1[:t_cut3])
+        sphaleron_events3_r = sum(y_data_file2[t_cut3:])
 
-    s = blackhole_events1_a
-    b = sphaleron_events1_r
+    s = blackhole_events3_a
+    b = sphaleron_events3_r
     current_signal_eff = (s / np.sqrt(s + b))
     signal_eff_list.append(current_signal_eff)
 
