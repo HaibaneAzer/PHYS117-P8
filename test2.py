@@ -15,3 +15,22 @@ for _, _, filename in os.walk(dirpath):
 for path in path_list:
     print(path + ": ", len(LHCO_reader.Events(f_name=path)))
 
+matrix = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+]
+
+# Transpose the matrix using list comprehension
+transposed_matrix = [[row[i] for row in matrix] for i in range(len(matrix[0]))]
+
+# Print original matrix
+print("Original Matrix:")
+for row in matrix:
+    print(row)
+
+# Print transposed matrix
+print("\nTransposed Matrix:")
+for row in transposed_matrix:
+    print(row)
+

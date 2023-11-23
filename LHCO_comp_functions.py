@@ -96,10 +96,32 @@ def filter_events_by_HT(events, HT_value):
         for particle in objects_for_HT:
             if particle in event:
                 HT += sum(p["PT"] for p in event[particle])
+        # make lists for each side of HT value
         if HT < HT_value:
             events_left.append(event)
         else:
             events_right.append(event)
+    return events_left, events_right
+
+def filter_events_by_Largest_PT(events, L_PT_value):
+    objects_2 = ['electron', 'muon', 'tau', 'jet']
+
+    # get HT of event
+    events_left = []
+    events_right = []
+    for event_idx in range(len(events)):
+        current_PT = 0 # reset PT
+        # compare every object in event
+        for particle in objects_2: 
+            if events[event_idx][particle]: # check if the object is in event
+                for object_idx in range(len(events[event_idx][particle])):
+                    if current_PT < events[event_idx][particle][object_idx]['PT']:
+                        current_PT = events[event_idx][particle][object_idx]['PT']
+
+        if current_PT < L_PT_value:
+            events_left.append(events[event_idx])
+        else:
+            events_right.append(events[event_idx])
     return events_left, events_right
 
 def delta_phi_per_event(phi_met_per_event, phi_per_event_L_PT):
