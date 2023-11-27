@@ -43,6 +43,7 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
 
             num_files = float(len(legend_labels))
 
+            markers=[">", ".", "*", "o"]
             # Calculate the width based on the number of files
             base_width = 0.7  # Set a base width
             width_scaling_factor = 1 / num_files  # Adjust this factor to control the scaling
@@ -51,15 +52,16 @@ def plot_line_graph(x_data, y_data, legend_labels, particle_name, prop_name, plo
             for j, (values, frequencies) in enumerate(data_per_file):
                 x_values_with_offset = [value + (j - (num_files - 1) / 2) * (total_width / num_files) - total_width / (2 * num_files) for value in values]
                 adjusted_width = total_width / num_files
-                ax.bar(x_values_with_offset, frequencies, width=adjusted_width, align='edge', alpha=0.7, label=legend_labels[j])
+                ax.scatter(values, frequencies, alpha=0.7, label=legend_labels[j], marker=markers[j])
 
             ax.set_title('{} per Event'.format(particles[i]))
             ax.set_ylabel('Frequency')
 
             # adjust legends
             box = ax.get_position()
-            ax.set_position([box.x0, box.y0, box.width*0.8, box.height])
-            ax.legend(bbox_to_anchor=(1, 0.5))
+            """ ax.set_position([box.x0, box.y0, box.width*0.8, box.height]) """
+            """ ax.legend(bbox_to_anchor=(1, 0.5)) """
+            ax.legend()
 
         plt.xlabel('Total Particles')
         plt.tight_layout()

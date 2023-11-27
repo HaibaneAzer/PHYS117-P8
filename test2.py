@@ -1,5 +1,6 @@
 from LHCO_reader import LHCO_reader
 import os
+import matplotlib.pyplot as plt
 background = "background/"
 events1 = LHCO_reader.Events(f_name=background+"ttbar.lhco") # 100000
 events2 = LHCO_reader.Events(f_name=background+"ttbar_largejet.lhco")
@@ -34,3 +35,6 @@ print("\nTransposed Matrix:")
 for row in transposed_matrix:
     print(row)
 
+fig, ax = plt.subplot(2, 3)
+
+plt.scatter()
